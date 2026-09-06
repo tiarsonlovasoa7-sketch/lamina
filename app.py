@@ -280,6 +280,41 @@ st.markdown(
     button[data-testid="stPopoverButton"] div[aria-hidden="true"] {
         display: none !important;
     }
+    button[data-testid="stPopoverButton"] {
+        width: 2.75rem !important;
+        min-width: 2.75rem !important;
+        height: 2.75rem !important;
+        padding: 0 !important;
+        justify-content: center !important;
+    }
+    [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] [data-testid="stPopover"]) > [data-testid="stColumn"]:last-child {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    [data-testid="stPopoverBody"] div[data-testid="stButton"] button [data-has-shortcut] {
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 0.5rem !important;
+        text-align: left !important;
+    }
+    [data-testid="stPopoverBody"] div[data-testid="stButton"] button {
+        justify-content: flex-start !important;
+    }
+    @media (max-width: 700px) {
+        [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] [data-testid="stPopover"]) {
+            flex-wrap: nowrap !important;
+        }
+        [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] [data-testid="stPopover"]) > [data-testid="stColumn"]:first-child {
+            flex: 1 1 0% !important;
+            min-width: 0 !important;
+        }
+        [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] [data-testid="stPopover"]) > [data-testid="stColumn"]:last-child {
+            flex: 0 0 3.5rem !important;
+            min-width: 3.5rem !important;
+        }
+    }
     /* Icônes au-dessus du texte (hors sidebar, form-submit et boutons "Retour/Changer de compte/Changer d'entreprise") */
     div[data-testid="stButton"] button [data-has-shortcut] {
         flex-direction: column !important;
