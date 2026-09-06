@@ -121,19 +121,44 @@ st.iframe(
                 return doc.documentElement.clientWidth <= 700;
             }
 
+            var iconesEnLigne = ["arrow_back", "swap_horiz", "house"];
+
+            function appliquerClassesBoutons() {
+                var boutons = doc.querySelectorAll('div[data-testid="stButton"] button');
+                for (var i = 0; i < boutons.length; i++) {
+                    var icone = boutons[i].querySelector('[data-testid="stIconMaterial"]');
+                    var nom = icone ? (icone.textContent || "").trim() : "";
+                    if (iconesEnLigne.indexOf(nom) !== -1) {
+                        boutons[i].classList.add("lamina-bouton-ligne");
+                    } else {
+                        boutons[i].classList.remove("lamina-bouton-ligne");
+                    }
+                }
+            }
+
             var conteneur = doc.querySelector('[data-testid="stMain"]');
+            var minuteurClasses = null;
+
+            function appliquerClassesDelaye() {
+                clearTimeout(minuteurClasses);
+                minuteurClasses = setTimeout(appliquerClassesBoutons, 150);
+            }
 
             function surveiller() {
-                if (!conteneur || !window.MutationObserver) return;
-                var obs = new MutationObserver(function (mutations) {
-                    if (!enAttente) return;
-                    for (var i = 0; i < mutations.length; i++) {
-                        if (voile && voile.contains(mutations[i].target)) continue;
-                        masquer();
-                        return;
-                    }
-                });
-                obs.observe(conteneur, { childList: true, subtree: true, characterData: true });
+                if (!conteneur) return;
+                if (window.MutationObserver) {
+                    var obs = new MutationObserver(function (mutations) {
+                        appliquerClassesDelaye();
+                        if (!enAttente) return;
+                        for (var i = 0; i < mutations.length; i++) {
+                            if (voile && voile.contains(mutations[i].target)) continue;
+                            masquer();
+                            return;
+                        }
+                    });
+                    obs.observe(conteneur, { childList: true, subtree: true, characterData: true });
+                }
+                appliquerClassesBoutons();
             }
 
             doc.addEventListener("click", function (evt) {
@@ -252,7 +277,7 @@ st.markdown(
         justify-content: flex-start !important;
         text-align: left !important;
     }
-    /* Icônes au-dessus du texte pour les boutons d'action (hors sidebar et form-submit) */
+    /* Icônes au-dessus du texte (hors sidebar, form-submit et boutons "Retour/Changer de compte/Changer d'entreprise") */
     div[data-testid="stButton"] button [data-has-shortcut] {
         flex-direction: column !important;
         align-items: center !important;
@@ -260,13 +285,23 @@ st.markdown(
         gap: 0.5rem !important;
         text-align: center !important;
     }
-    section[data-testid="stSidebar"] button[data-testid="stBaseButton-tertiary"] [data-has-shortcut],
+    section[data-testid="stSidebar"] div[data-testid="stButton"] button [data-has-shortcut],
     div[data-testid="stFormSubmitButton"] button [data-has-shortcut] {
         flex-direction: row !important;
         align-items: center !important;
         justify-content: flex-start !important;
         gap: 0.5rem !important;
         text-align: left !important;
+    }
+    div[data-testid="stButton"] button.lamina-bouton-ligne [data-has-shortcut] {
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 0.5rem !important;
+        text-align: left !important;
+    }
+    div[data-testid="stButton"] button.lamina-bouton-ligne {
+        justify-content: flex-start !important;
     }
     div[data-testid="stButton"] button {
         justify-content: center !important;
@@ -281,12 +316,9 @@ st.markdown(
         border: none !important;
     }
     section[data-testid="stSidebar"] div[data-testid="stButton"] button {
-        justify-content: center !important;
+        justify-content: flex-start !important;
         border-radius: 16px;
         border: none !important;
-    }
-    section[data-testid="stSidebar"] button[data-testid="stBaseButton-tertiary"] {
-        justify-content: flex-start !important;
     }
     section[data-testid="stSidebar"] h1 {
         font-size: 1.45rem !important;
