@@ -98,6 +98,7 @@ st.iframe(
                 if (tid.indexOf("SidebarCollapse") !== -1) return true;
                 if (tid.indexOf("ExpandSidebarButton") !== -1) return true;
                 if (tid.indexOf("stPopover") !== -1) return true;
+                if (tid.indexOf("stMainMenu") !== -1) return true;
                 return false;
             }
 
@@ -251,6 +252,25 @@ st.markdown(
         justify-content: flex-start !important;
         text-align: left !important;
     }
+    /* Icons au-dessus du texte pour les boutons d action (hors form-submit et sidebar) */
+    div[data-testid="stButton"] button > div:first-child {
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0.4rem !important;
+        text-align: center !important;
+    }
+    section[data-testid="stSidebar"] div[data-testid="stButton"] button > div:first-child,
+    div[data-testid="stFormSubmitButton"] button > div:first-child {
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 0.5rem !important;
+        text-align: left !important;
+    }
+    div[data-testid="stButton"] button {
+        justify-content: center !important;
+    }
     section[data-testid="stSidebar"] {
         border-top-right-radius: 20px;
         border-bottom-right-radius: 20px;
@@ -261,6 +281,7 @@ st.markdown(
         border: none !important;
     }
     section[data-testid="stSidebar"] div[data-testid="stButton"] button {
+        justify-content: flex-start !important;
         border-radius: 16px;
         border: none !important;
     }
