@@ -260,7 +260,7 @@ st.markdown(
         gap: 0.5rem !important;
         text-align: center !important;
     }
-    section[data-testid="stSidebar"] div[data-testid="stButton"] button [data-has-shortcut],
+    section[data-testid="stSidebar"] button[data-testid="stBaseButton-tertiary"] [data-has-shortcut],
     div[data-testid="stFormSubmitButton"] button [data-has-shortcut] {
         flex-direction: row !important;
         align-items: center !important;
@@ -281,9 +281,12 @@ st.markdown(
         border: none !important;
     }
     section[data-testid="stSidebar"] div[data-testid="stButton"] button {
-        justify-content: flex-start !important;
+        justify-content: center !important;
         border-radius: 16px;
         border: none !important;
+    }
+    section[data-testid="stSidebar"] button[data-testid="stBaseButton-tertiary"] {
+        justify-content: flex-start !important;
     }
     section[data-testid="stSidebar"] h1 {
         font-size: 1.45rem !important;
