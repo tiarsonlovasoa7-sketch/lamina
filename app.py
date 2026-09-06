@@ -49,86 +49,92 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.markdown(
+# Chargeur plein ecran declenche au clic. Les scripts ne s'executent pas dans st.markdown,
+# on passe donc par st.iframe (script + acces meme-origine autorises) qui rejoint le DOM
+# principal de l'application via window.parent.document.
+st.iframe(
     """
+    <div style="position:relative;width:0;height:0;overflow:hidden"></div>
     <script>
     (function () {
-        if (window.__laminaLoaderJs) return;
-        window.__laminaLoaderJs = true;
+        try {
+            var doc = window.parent.document;
+            if (doc.__laminaLoaderJs) { return; }
+            doc.__laminaLoaderJs = true;
 
-        var voile = null;
-        var enAttente = false;
-        var minuteur = null;
+            var voile = null;
+            var enAttente = false;
+            var minuteur = null;
 
-        function creerVoile() {
-            var v = document.createElement("div");
-            v.className = "lamina-voile-js";
-            v.innerHTML = '<div class="lamina-spin-js"></div><div class="lamina-texte-js">Veuillez patienter s\'il vous pla&icirc;t</div>';
-            document.body.appendChild(v);
-            return v;
-        }
-
-        function montrer() {
-            if (!voile) voile = creerVoile();
-            voile.classList.add("actif");
-            enAttente = true;
-            clearTimeout(minuteur);
-            minuteur = setTimeout(masquer, 8000);
-        }
-
-        function masquer() {
-            if (voile) voile.classList.remove("actif");
-            enAttente = false;
-            clearTimeout(minuteur);
-        }
-
-        function estTelechargement(el) {
-            var tid = el.getAttribute("data-testid") || "";
-            return tid.toLowerCase().indexOf("download") !== -1;
-        }
-
-        function estCosmetique(el) {
-            var tid = el.getAttribute("data-testid") || "";
-            if (tid.indexOf("SidebarCollapse") !== -1) return true;
-            return false;
-        }
-
-        var conteneur = document.querySelector('[data-testid="stMain"]');
-
-        function surveiller() {
-            if (!conteneur || !window.MutationObserver) return;
-            var obs = new MutationObserver(function (mutations) {
-                if (!enAttente) return;
-                for (var i = 0; i < mutations.length; i++) {
-                    if (voile && voile.contains(mutations[i].target)) continue;
-                    masquer();
-                    return;
-                }
-            });
-            obs.observe(conteneur, { childList: true, subtree: true, characterData: true });
-        }
-
-        document.addEventListener("click", function (evt) {
-            var el = evt.target && evt.target.closest("button");
-            if (!el) return;
-            if (estCosmetique(el)) return;
-            montrer();
-            if (estTelechargement(el)) {
-                setTimeout(masquer, 1500);
+            function creerVoile() {
+                var v = doc.createElement("div");
+                v.className = "lamina-voile-js";
+                v.innerHTML = '<div class="lamina-spin-js"></div><div class="lamina-texte-js">Veuillez patienter</div>';
+                doc.body.appendChild(v);
+                return v;
             }
-        }, true);
 
-        document.addEventListener("keydown", function (evt) {
-            if (evt.key !== "Enter") return;
-            var el = evt.target && evt.target.closest("input, textarea");
-            if (el) montrer();
-        }, true);
+            function montrer() {
+                if (!voile) voile = creerVoile();
+                voile.classList.add("actif");
+                enAttente = true;
+                clearTimeout(minuteur);
+                minuteur = setTimeout(masquer, 8000);
+            }
 
-        surveiller();
+            function masquer() {
+                if (voile) voile.classList.remove("actif");
+                enAttente = false;
+                clearTimeout(minuteur);
+            }
+
+            function estTelechargement(el) {
+                var tid = el.getAttribute("data-testid") || "";
+                return tid.toLowerCase().indexOf("download") !== -1;
+            }
+
+            function estCosmetique(el) {
+                var tid = el.getAttribute("data-testid") || "";
+                return tid.indexOf("SidebarCollapse") !== -1;
+            }
+
+            var conteneur = doc.querySelector('[data-testid="stMain"]');
+
+            function surveiller() {
+                if (!conteneur || !window.MutationObserver) return;
+                var obs = new MutationObserver(function (mutations) {
+                    if (!enAttente) return;
+                    for (var i = 0; i < mutations.length; i++) {
+                        if (voile && voile.contains(mutations[i].target)) continue;
+                        masquer();
+                        return;
+                    }
+                });
+                obs.observe(conteneur, { childList: true, subtree: true, characterData: true });
+            }
+
+            doc.addEventListener("click", function (evt) {
+                var el = evt.target && evt.target.closest("button");
+                if (!el) return;
+                if (estCosmetique(el)) return;
+                montrer();
+                if (estTelechargement(el)) {
+                    setTimeout(masquer, 1500);
+                }
+            }, true);
+
+            doc.addEventListener("keydown", function (evt) {
+                if (evt.key !== "Enter") return;
+                var el = evt.target && evt.target.closest("input, textarea");
+                if (el) montrer();
+            }, true);
+
+            surveiller();
+        } catch (e) {}
     })();
     </script>
     """,
-    unsafe_allow_html=True,
+    height=5,
 )
 
 # Style global : titres rouges, ombre et elevation au toucher, navigation arrondie
