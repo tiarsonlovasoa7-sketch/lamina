@@ -3,13 +3,40 @@ import os
 import hashlib
 import hmac
 import re
+import tempfile
 import uuid
 from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, func
 from sqlalchemy.orm import declarative_base, sessionmaker
 
+
+def _dossier_bases():
+    """Dossier de travail accessible en ecriture pour les bases de donnees.
+
+    En local, on utilise le dossier ``bases`` du projet. Sur les hebergements
+    (Streamlit Cloud, ...) dont le filesystem est en lecture seule, on bascule
+    vers un dossier temporaire inscriptible (``/tmp`` ou ``~/.cache``).
+    """
+    candidats = [
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "bases"),
+        os.path.join(tempfile.gettempdir(), "lamina"),
+        os.path.join(os.path.expanduser("~"), ".cache", "lamina"),
+    ]
+    for dossier in candidats:
+        try:
+            os.makedirs(dossier, exist_ok=True)
+            sonde = os.path.join(dossier, ".sonde")
+            with open(sonde, "w", encoding="utf-8") as f:
+                f.write("ok")
+            os.remove(sonde)
+            return dossier
+        except OSError:
+            continue
+    return candidats[0]
+
+
 # Dossier contenant l annuaire et les bases de donnees de chaque compte
-DOSSIER_BASES = "bases"
+DOSSIER_BASES = _dossier_bases()
 
 # Base de donnees de l annuaire des comptes (entreprises et espaces personnels)
 DATABASE_URL = f"sqlite:///{DOSSIER_BASES}/annuaire.db"
