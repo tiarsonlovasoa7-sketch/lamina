@@ -49,6 +49,88 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+st.markdown(
+    """
+    <script>
+    (function () {
+        if (window.__laminaLoaderJs) return;
+        window.__laminaLoaderJs = true;
+
+        var voile = null;
+        var enAttente = false;
+        var minuteur = null;
+
+        function creerVoile() {
+            var v = document.createElement("div");
+            v.className = "lamina-voile-js";
+            v.innerHTML = '<div class="lamina-spin-js"></div><div class="lamina-texte-js">Veuillez patienter s\'il vous pla&icirc;t</div>';
+            document.body.appendChild(v);
+            return v;
+        }
+
+        function montrer() {
+            if (!voile) voile = creerVoile();
+            voile.classList.add("actif");
+            enAttente = true;
+            clearTimeout(minuteur);
+            minuteur = setTimeout(masquer, 8000);
+        }
+
+        function masquer() {
+            if (voile) voile.classList.remove("actif");
+            enAttente = false;
+            clearTimeout(minuteur);
+        }
+
+        function estTelechargement(el) {
+            var tid = el.getAttribute("data-testid") || "";
+            return tid.toLowerCase().indexOf("download") !== -1;
+        }
+
+        function estCosmetique(el) {
+            var tid = el.getAttribute("data-testid") || "";
+            if (tid.indexOf("SidebarCollapse") !== -1) return true;
+            return false;
+        }
+
+        var conteneur = document.querySelector('[data-testid="stMain"]');
+
+        function surveiller() {
+            if (!conteneur || !window.MutationObserver) return;
+            var obs = new MutationObserver(function (mutations) {
+                if (!enAttente) return;
+                for (var i = 0; i < mutations.length; i++) {
+                    if (voile && voile.contains(mutations[i].target)) continue;
+                    masquer();
+                    return;
+                }
+            });
+            obs.observe(conteneur, { childList: true, subtree: true, characterData: true });
+        }
+
+        document.addEventListener("click", function (evt) {
+            var el = evt.target && evt.target.closest("button");
+            if (!el) return;
+            if (estCosmetique(el)) return;
+            montrer();
+            if (estTelechargement(el)) {
+                setTimeout(masquer, 1500);
+            }
+        }, true);
+
+        document.addEventListener("keydown", function (evt) {
+            if (evt.key !== "Enter") return;
+            var el = evt.target && evt.target.closest("input, textarea");
+            if (el) montrer();
+        }, true);
+
+        surveiller();
+    })();
+    </script>
+    """,
+    unsafe_allow_html=True,
+)
+
 # Style global : titres rouges, ombre et elevation au toucher, navigation arrondie
 st.markdown(
     """
@@ -240,11 +322,11 @@ st.markdown(
         0% { opacity: 1; }
         100% { opacity: 0; visibility: hidden; }
     }
-    .lamina-loader {
+    .lamina-voile-js {
         position: fixed;
         inset: 0;
-        z-index: 999999;
-        display: flex;
+        z-index: 999998;
+        display: none;
         flex-direction: column;
         align-items: center;
         justify-content: center;
@@ -252,21 +334,11 @@ st.markdown(
         pointer-events: none;
         background: rgba(247, 246, 242, 0.94);
         background: light-dark(rgba(247, 246, 242, 0.94), rgba(23, 27, 33, 0.94));
-        animation: lamina-voile 1.4s ease forwards;
     }
-    .lamina-loader::before {
-        content: "Veuillez patienter s'il vous plaît";
-        color: #4B5563;
-        color: light-dark(#4B5563, #C7CDD6);
-        font-size: 1.05rem;
-        font-weight: 500;
-        letter-spacing: 0.01em;
-        text-align: center;
-        white-space: nowrap;
-        animation: lamina-fade-up 0.35s ease 0.05s forwards;
+    .lamina-voile-js.actif {
+        display: flex;
     }
-    .lamina-loader::after {
-        content: "";
+    .lamina-spin-js {
         width: 46px;
         height: 46px;
         border: 4px solid rgba(192, 57, 43, 0.18);
@@ -274,31 +346,19 @@ st.markdown(
         border-right-color: #C0392B;
         border-radius: 50%;
         box-shadow: 0 0 14px rgba(192, 57, 43, 0.25);
-        animation: lamina-spin 0.8s linear infinite, lamina-fade-in 0.35s ease 0.12s backwards;
+        animation: lamina-spin 0.8s linear infinite;
+    }
+    .lamina-texte-js {
+        color: #4B5563;
+        color: light-dark(#4B5563, #C7CDD6);
+        font-size: 1.05rem;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+        text-align: center;
+        white-space: nowrap;
     }
     @keyframes lamina-spin {
         to { transform: rotate(360deg); }
-    }
-    @keyframes lamina-fade-in {
-        0% { opacity: 0; }
-        100% { opacity: 1; }
-    }
-    @keyframes lamina-fade-up {
-        0% { opacity: 0; transform: translateY(6px); }
-        100% { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes lamina-voile {
-        0% { opacity: 1; }
-        65% { opacity: 1; }
-        100% { opacity: 0; visibility: hidden; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-        .lamina-loader {
-            animation-duration: 0.001s !important;
-            animation-fill-mode: forwards !important;
-            opacity: 0 !important;
-            visibility: hidden !important;
-        }
     }
     /* ------- Adaptation mobile ------- */
     @media (max-width: 700px) {
@@ -359,10 +419,6 @@ if "flash_msg" not in st.session_state:
     st.session_state.flash_msg = None
 if "flash_type" not in st.session_state:
     st.session_state.flash_type = "success"
-
-# Affiche l indicateur de chargement au debut de la nouvelle page lors d un changement de page ou onglet
-if st.session_state.pop("_page_chargement", False):
-    st.markdown('<div class="lamina-loader" id="laminaLoader"></div>', unsafe_allow_html=True)
 
 # Ecran de lancement unique : "Lamina" s'ecrit au clavier au tout debut de session
 if st.session_state.get("intro_jouee") is None:
