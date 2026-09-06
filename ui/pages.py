@@ -145,9 +145,11 @@ def page_saisie(user, db):
                                 show_notification(f"Rendez-vous créé, mais l'envoi de l'e-mail a échoué : {err_mail}", type_notif="warning")
 
                     if user['role'] in ("Directeur", "Personnel"):
-                        show_notification(f"Le rendez-vous {format_id(nouveau.id)} a été ajouté avec succès.")
+                        st.session_state.flash_msg = f"Le rendez-vous {format_id(nouveau.id)} a été ajouté avec succès."
                     else:
-                        show_notification(f"La demande {format_id(nouveau.id)} a été envoyée au Responsable avec succès.")
+                        st.session_state.flash_msg = f"La demande {format_id(nouveau.id)} a été envoyée au Responsable avec succès."
+                    st.session_state.flash_type = "success"
+                    afficher_chargement()
 
 
 def page_validation(user, db):
@@ -195,10 +197,10 @@ def page_validation(user, db):
                             st.session_state.editing_rdv_id = None
                             st.session_state.flash_msg = f"Modifications du rendez-vous {format_id(rdv.id)} enregistrées avec succès."
                             st.session_state.flash_type = "success"
-                            st.rerun()
+                            afficher_chargement()
                         if col_cancel.form_submit_button("Annuler"):
                             st.session_state.editing_rdv_id = None
-                            st.rerun()
+                            afficher_chargement()
                 else:
                     c1, c2 = st.columns([3, 1])
                     with c1:
@@ -219,11 +221,11 @@ def page_validation(user, db):
 
                             st.session_state.flash_msg = f"Audience {format_id(rdv.id)} acceptée avec succès."
                             st.session_state.flash_type = "success"
-                            st.rerun()
+                            afficher_chargement()
 
                         if st.button("Modifier le RDV", key=f"btn_edit_{rdv.id}", icon=":material/edit:"):
                             st.session_state.editing_rdv_id = rdv.id
-                            st.rerun()
+                            afficher_chargement()
 
                         if st.button("Annuler le RDV", key=f"ref_{rdv.id}", icon=":material/cancel:"):
                             with st.spinner("Annulation du rendez-vous et notification..."):
@@ -236,7 +238,7 @@ def page_validation(user, db):
 
                             st.session_state.flash_msg = f"Audience {format_id(rdv.id)} annulée avec succès."
                             st.session_state.flash_type = "error"
-                            st.rerun()
+                            afficher_chargement()
 
 
 def page_gestion_equipe(user, db):
@@ -277,7 +279,7 @@ def page_gestion_equipe(user, db):
                             db.commit()
                         st.session_state.flash_msg = f"Assistant(e) {nom_clean} ajouté(e) à l'équipe avec succès."
                         st.session_state.flash_type = "success"
-                        st.rerun()
+                        afficher_chargement()
 
     st.space("medium")
     _section_liste_membres()
@@ -351,10 +353,10 @@ def page_historique(user, db):
                         st.session_state.editing_rdv_id = None
                         st.session_state.flash_msg = f"Demande {format_id(rdv_edit.id)} mise à jour avec succès."
                         st.session_state.flash_type = "success"
-                        st.rerun()
+                        afficher_chargement()
                     if col_cancel.form_submit_button("Annuler"):
                         st.session_state.editing_rdv_id = None
-                        st.rerun()
+                        afficher_chargement()
 
     data = []
     for r in tous:
@@ -400,4 +402,4 @@ def page_historique(user, db):
         selected_label = col_sel.selectbox("Choisir une demande à modifier", list(rdv_options.keys()))
         if col_btn.button("Modifier cette demande"):
             st.session_state.editing_rdv_id = rdv_options[selected_label]
-            st.rerun()
+            afficher_chargement()

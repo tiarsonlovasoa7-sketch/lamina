@@ -221,7 +221,12 @@ def interface_personnel():
                             else:
                                 st.session_state.tenant_db = compte.chemin_db
                                 msg, typ = envoyer_code_reset(clean_mail)
-                                show_notification(msg, type_notif=typ)
+                                if typ == "success":
+                                    st.session_state.flash_msg = msg
+                                    st.session_state.flash_type = "success"
+                                    afficher_chargement()
+                                else:
+                                    show_notification(msg, type_notif=typ)
 
                 st.space("small")
                 with st.form("reset_confirm_perso"):
@@ -232,4 +237,9 @@ def interface_personnel():
 
                     if btn_confirm_reset:
                         msg, typ = confirmer_reset(code_saisi, new_pass, new_pass_conf)
-                        show_notification(msg, type_notif=typ)
+                        if typ == "success":
+                            st.session_state.flash_msg = msg
+                            st.session_state.flash_type = "success"
+                            afficher_chargement()
+                        else:
+                            show_notification(msg, type_notif=typ)
