@@ -252,16 +252,16 @@ st.markdown(
         justify-content: flex-start !important;
         text-align: left !important;
     }
-    /* Icons au-dessus du texte pour les boutons d action (hors form-submit et sidebar) */
-    div[data-testid="stButton"] button > div:first-child {
+    /* Icônes au-dessus du texte pour les boutons d'action (hors sidebar et form-submit) */
+    div[data-testid="stButton"] button [data-has-shortcut] {
         flex-direction: column !important;
         align-items: center !important;
         justify-content: center !important;
-        gap: 0.4rem !important;
+        gap: 0.5rem !important;
         text-align: center !important;
     }
-    section[data-testid="stSidebar"] div[data-testid="stButton"] button > div:first-child,
-    div[data-testid="stFormSubmitButton"] button > div:first-child {
+    section[data-testid="stSidebar"] div[data-testid="stButton"] button [data-has-shortcut],
+    div[data-testid="stFormSubmitButton"] button [data-has-shortcut] {
         flex-direction: row !important;
         align-items: center !important;
         justify-content: flex-start !important;
