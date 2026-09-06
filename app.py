@@ -69,7 +69,7 @@ st.iframe(
             function creerVoile() {
                 var v = doc.createElement("div");
                 v.className = "lamina-voile-js";
-                v.innerHTML = '<div class="lamina-spin-js"></div><div class="lamina-texte-js">Veuillez patienter</div>';
+                v.innerHTML = '<div class="lamina-nom-js">Lamina</div><div class="lamina-spin-js"></div><div class="lamina-texte-js">Veuillez patienter</div>';
                 doc.body.appendChild(v);
                 return v;
             }
@@ -97,12 +97,18 @@ st.iframe(
                 var tid = el.getAttribute("data-testid") || "";
                 if (tid.indexOf("SidebarCollapse") !== -1) return true;
                 if (tid.indexOf("ExpandSidebarButton") !== -1) return true;
+                if (tid.indexOf("stPopover") !== -1) return true;
                 return false;
             }
 
             function estDansSidebar(el) {
                 if (!el.closest) return false;
                 return !!el.closest('[data-testid="stSidebar"]');
+            }
+
+            function estDansPopover(el) {
+                if (!el.closest) return false;
+                return !!el.closest('[data-testid="stPopover"]');
             }
 
             function replierSidebar() {
@@ -133,12 +139,16 @@ st.iframe(
                 var el = evt.target && evt.target.closest("button");
                 if (!el) return;
                 if (estCosmetique(el)) return;
+                if (estDansSidebar(el)) {
+                    if (estMobile()) {
+                        replierSidebar();
+                    }
+                    return;
+                }
+                if (estDansPopover(el)) return;
                 montrer();
                 if (estTelechargement(el)) {
                     setTimeout(masquer, 1500);
-                }
-                if (estDansSidebar(el) && estMobile()) {
-                    replierSidebar();
                 }
             }, true);
 
@@ -355,13 +365,20 @@ st.markdown(
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 1.5rem;
+        gap: 1.25rem;
         pointer-events: none;
-        background: rgba(247, 246, 242, 0.94);
-        background: light-dark(rgba(247, 246, 242, 0.94), rgba(23, 27, 33, 0.94));
+        background: #F7F6F2;
+        opacity: 0.97;
     }
     .lamina-voile-js.actif {
         display: flex;
+    }
+    .lamina-nom-js {
+        color: #C0392B;
+        font-size: 40px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        font-family: "Menlo", "Consolas", monospace;
     }
     .lamina-spin-js {
         width: 46px;
@@ -375,7 +392,6 @@ st.markdown(
     }
     .lamina-texte-js {
         color: #4B5563;
-        color: light-dark(#4B5563, #C7CDD6);
         font-size: 1.05rem;
         font-weight: 500;
         letter-spacing: 0.01em;
