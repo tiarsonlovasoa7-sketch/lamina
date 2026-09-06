@@ -277,6 +277,9 @@ st.markdown(
         justify-content: flex-start !important;
         text-align: left !important;
     }
+    button[data-testid="stPopoverButton"] div[aria-hidden="true"] {
+        display: none !important;
+    }
     /* Icônes au-dessus du texte (hors sidebar, form-submit et boutons "Retour/Changer de compte/Changer d'entreprise") */
     div[data-testid="stButton"] button [data-has-shortcut] {
         flex-direction: column !important;
