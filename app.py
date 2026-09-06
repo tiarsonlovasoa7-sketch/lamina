@@ -95,7 +95,23 @@ st.iframe(
 
             function estCosmetique(el) {
                 var tid = el.getAttribute("data-testid") || "";
-                return tid.indexOf("SidebarCollapse") !== -1;
+                if (tid.indexOf("SidebarCollapse") !== -1) return true;
+                if (tid.indexOf("ExpandSidebarButton") !== -1) return true;
+                return false;
+            }
+
+            function estDansSidebar(el) {
+                if (!el.closest) return false;
+                return !!el.closest('[data-testid="stSidebar"]');
+            }
+
+            function replierSidebar() {
+                var btn = doc.querySelector('[data-testid="stSidebarCollapseButton"]');
+                if (btn) btn.click();
+            }
+
+            function estMobile() {
+                return doc.documentElement.clientWidth <= 700;
             }
 
             var conteneur = doc.querySelector('[data-testid="stMain"]');
@@ -120,6 +136,9 @@ st.iframe(
                 montrer();
                 if (estTelechargement(el)) {
                     setTimeout(masquer, 1500);
+                }
+                if (estDansSidebar(el) && estMobile()) {
+                    replierSidebar();
                 }
             }, true);
 
