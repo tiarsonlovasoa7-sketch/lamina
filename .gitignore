@@ -1,0 +1,17 @@
+env/
+__pycache__/
+*.pyc
+.agents/
+bases/*.db
+agenda.db
+agenda_manager.db
+streamlit_err.log
+streamlit_out.log
+.env
+.env.*
+!.env.example
+!requirements.txt
+.android/
+build/
+*.apk
+*.aab
