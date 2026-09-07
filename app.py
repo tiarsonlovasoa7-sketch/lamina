@@ -76,6 +76,7 @@ st.iframe(
 
             function montrer() {
                 if (!voile) voile = creerVoile();
+                appliquerThemeVoile();
                 voile.classList.add("actif");
                 enAttente = true;
                 clearTimeout(minuteur);
@@ -86,6 +87,31 @@ st.iframe(
                 if (voile) voile.classList.remove("actif");
                 enAttente = false;
                 clearTimeout(minuteur);
+            }
+
+            function themeSombre() {
+                var attr = doc.documentElement.getAttribute && doc.documentElement.getAttribute("data-theme");
+                if (attr === "dark") return true;
+                if (attr === "light") return false;
+                var corpAttr = doc.body.getAttribute && doc.body.getAttribute("data-theme");
+                if (corpAttr === "dark") return true;
+                if (corpAttr === "light") return false;
+                try {
+                    var bg = getComputedStyle(doc.body).backgroundColor;
+                    var m = /rgba?\\(\\s*(\\d+)[,\\s]+(\\d+)[,\\s]+(\\d+)/.exec(bg);
+                    if (m) {
+                        var l = 0.299 * Number(m[1]) + 0.587 * Number(m[2]) + 0.114 * Number(m[3]);
+                        return l < 128;
+                    }
+                } catch (e) {}
+                return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+            }
+
+            function appliquerThemeVoile() {
+                if (!voile) return;
+                voile.classList.remove("theme-sombre");
+                voile.classList.remove("theme-clair");
+                voile.classList.add(themeSombre() ? "theme-sombre" : "theme-clair");
             }
 
             function estTelechargement(el) {
@@ -112,16 +138,29 @@ st.iframe(
                 return !!el.closest('[data-testid="stPopover"]');
             }
 
-            function replierSidebar() {
-                var btn = doc.querySelector('[data-testid="stSidebarCollapseButton"]');
-                if (btn) btn.click();
-            }
-
             function estMobile() {
                 return doc.documentElement.clientWidth <= 700;
             }
 
+            function replierSidebar() {
+                var barre = doc.querySelector('[data-testid="stSidebar"]');
+                if (!barre) return;
+                if (barre.getAttribute("aria-expanded") !== "true") return;
+                var cible = doc.querySelector('[data-testid="stMain"]') || doc.querySelector('[data-testid="stApp"]') || doc.body;
+                if (cible) {
+                    cible.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+                }
+            }
+
             var iconesEnLigne = ["arrow_back", "swap_horiz", "house"];
+
+            function estRetour(el) {
+                var icone = el.querySelector ? el.querySelector('[data-testid="stIconMaterial"]') : null;
+                var nom = icone ? (icone.textContent || "").trim() : "";
+                if (iconesEnLigne.indexOf(nom) !== -1) return true;
+                if (estDansSidebar(el) && (el.textContent || "").indexOf("Tableau de bord") !== -1) return true;
+                return false;
+            }
 
             function appliquerClassesBoutons() {
                 var boutons = doc.querySelectorAll('div[data-testid="stButton"] button');
@@ -166,12 +205,14 @@ st.iframe(
                 if (!el) return;
                 if (estCosmetique(el)) return;
                 if (estDansSidebar(el)) {
+                    if (!estRetour(el)) montrer();
                     if (estMobile()) {
                         replierSidebar();
                     }
                     return;
                 }
                 if (estDansPopover(el)) return;
+                if (estRetour(el)) return;
                 montrer();
                 if (estTelechargement(el)) {
                     setTimeout(masquer, 1500);
@@ -455,17 +496,18 @@ st.markdown(
         position: fixed;
         inset: 0;
         z-index: 999998;
-        display: none;
+        display: none !important;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         gap: 1.25rem;
         pointer-events: none;
-        background: #F7F6F2;
-        opacity: 0.97;
+        background: rgba(247, 246, 242, 0.97);
+        backdrop-filter: blur(4px);
+        transition: background-color 0.3s ease, color 0.3s ease;
     }
     .lamina-voile-js.actif {
-        display: flex;
+        display: flex !important;
     }
     .lamina-nom-js {
         color: #C0392B;
@@ -492,6 +534,83 @@ st.markdown(
         text-align: center;
         white-space: nowrap;
     }
+
+    /* ------- Adaptation du Voile au Mode Sombre (Theme #171B21 & #C0392B) ------- */
+    .lamina-voile-js.theme-clair {
+        background: rgba(247, 246, 242, 0.97) !important;
+        backdrop-filter: blur(4px) !important;
+    }
+    .lamina-voile-js.theme-clair .lamina-nom-js {
+        color: #C0392B !important;
+        text-shadow: none !important;
+    }
+    .lamina-voile-js.theme-clair .lamina-spin-js {
+        border-color: rgba(192, 57, 43, 0.18) !important;
+        border-top-color: #C0392B !important;
+        border-right-color: #C0392B !important;
+        box-shadow: 0 0 14px rgba(192, 57, 43, 0.25) !important;
+    }
+    .lamina-voile-js.theme-clair .lamina-texte-js {
+        color: #4B5563 !important;
+    }
+    .lamina-voile-js.theme-sombre,
+    [data-theme="dark"] .lamina-voile-js,
+    body.dark-theme .lamina-voile-js {
+        background: rgba(23, 27, 33, 0.97) !important;
+        backdrop-filter: blur(6px) !important;
+    }
+    .lamina-voile-js.theme-sombre .lamina-nom-js,
+    [data-theme="dark"] .lamina-voile-js .lamina-nom-js {
+        color: #C0392B !important;
+        text-shadow: 0 0 14px rgba(192, 57, 43, 0.45) !important;
+    }
+    .lamina-voile-js.theme-sombre .lamina-spin-js,
+    [data-theme="dark"] .lamina-voile-js .lamina-spin-js {
+        border-color: rgba(192, 57, 43, 0.22) !important;
+        border-top-color: #C0392B !important;
+        border-right-color: #C0392B !important;
+        box-shadow: 0 0 18px rgba(192, 57, 43, 0.38) !important;
+    }
+    .lamina-voile-js.theme-sombre .lamina-texte-js,
+    [data-theme="dark"] .lamina-voile-js .lamina-texte-js {
+        color: #9AA0A6 !important;
+    }
+
+    .lamina-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 999999;
+        background: rgba(247, 246, 242, 0.96);
+        pointer-events: none;
+    }
+    [data-theme="dark"] .lamina-loader,
+    body.dark-theme .lamina-loader {
+        background: rgba(23, 27, 33, 0.97) !important;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        .lamina-voile-js:not(.theme-clair) {
+            background: rgba(23, 27, 33, 0.97);
+            backdrop-filter: blur(6px);
+        }
+        .lamina-voile-js:not(.theme-clair) .lamina-nom-js {
+            color: #C0392B;
+            text-shadow: 0 0 14px rgba(192, 57, 43, 0.45);
+        }
+        .lamina-voile-js:not(.theme-clair) .lamina-spin-js {
+            border-color: rgba(192, 57, 43, 0.22);
+            border-top-color: #C0392B;
+            border-right-color: #C0392B;
+            box-shadow: 0 0 18px rgba(192, 57, 43, 0.38);
+        }
+        .lamina-voile-js:not(.theme-clair) .lamina-texte-js {
+            color: #9AA0A6;
+        }
+        .lamina-loader:not(.theme-clair) {
+            background: rgba(23, 27, 33, 0.97);
+        }
+    }
+
     @keyframes lamina-spin {
         to { transform: rotate(360deg); }
     }
@@ -555,6 +674,10 @@ if "flash_msg" not in st.session_state:
 if "flash_type" not in st.session_state:
     st.session_state.flash_type = "success"
 
+# Affiche l indicateur de chargement
+if st.session_state.pop("_page_chargement", False):
+    pass
+
 # Ecran de lancement unique : "Lamina" s'ecrit au clavier au tout debut de session
 if st.session_state.get("intro_jouee") is None:
     st.session_state.intro_jouee = True
@@ -611,12 +734,20 @@ if st.session_state.user is None and st.session_state.mode is None:
     with col_milieu:
         if st.button(":blue[**Mode personnel**]\n\nGérer votre propre programme", key="mode_personnel", icon=":material/person:", width="stretch", type="primary"):
             st.session_state.mode = "personnel"
+            st.session_state.tenant_db = None
+            st.session_state.perso_selection_nom = None
+            st.session_state.perso_selection_chemin = None
             afficher_chargement()
 
         st.space("small")
 
         if st.button(":blue[**Mode équipe**]\n\nAvec plusieurs personnes selon votre entreprise", key="mode_equipe", icon=":material/apartment:", width="stretch"):
             st.session_state.mode = "equipe"
+            st.session_state.tenant_db = None
+            st.session_state.equipe_selection_chemin = None
+            st.session_state.equipe_selection_nom = None
+            st.session_state.equipe_selection_membre = None
+            st.session_state.equipe_selection_libelle = None
             afficher_chargement()
 
     st.stop()
