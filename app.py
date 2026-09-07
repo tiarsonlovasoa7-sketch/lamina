@@ -120,6 +120,10 @@ st.iframe(
             }
 
             function estCosmetique(el) {
+                if (el.closest) {
+                    var anc = el.closest('[data-testid*="SidebarCollapseButton"], [data-testid*="SidebarExpandButton"], [data-testid*="stExpandSidebarButton"], [data-testid*="stSidebarCollapseButton"], [data-testid*="SidebarCollapse"]');
+                    if (anc) return true;
+                }
                 var tid = el.getAttribute("data-testid") || "";
                 if (tid.indexOf("SidebarCollapse") !== -1) return true;
                 if (tid.indexOf("ExpandSidebarButton") !== -1) return true;
@@ -153,14 +157,6 @@ st.iframe(
             }
 
             var iconesEnLigne = ["arrow_back", "swap_horiz", "house"];
-
-            function estRetour(el) {
-                var icone = el.querySelector ? el.querySelector('[data-testid="stIconMaterial"]') : null;
-                var nom = icone ? (icone.textContent || "").trim() : "";
-                if (iconesEnLigne.indexOf(nom) !== -1) return true;
-                if (estDansSidebar(el) && (el.textContent || "").indexOf("Tableau de bord") !== -1) return true;
-                return false;
-            }
 
             function appliquerClassesBoutons() {
                 var boutons = doc.querySelectorAll('div[data-testid="stButton"] button');
@@ -205,14 +201,13 @@ st.iframe(
                 if (!el) return;
                 if (estCosmetique(el)) return;
                 if (estDansSidebar(el)) {
-                    if (!estRetour(el)) montrer();
+                    montrer();
                     if (estMobile()) {
                         replierSidebar();
                     }
                     return;
                 }
                 if (estDansPopover(el)) return;
-                if (estRetour(el)) return;
                 montrer();
                 if (estTelechargement(el)) {
                     setTimeout(masquer, 1500);
