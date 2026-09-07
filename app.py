@@ -163,6 +163,41 @@ st.iframe(
 
             var iconesEnLigne = ["arrow_back", "swap_horiz", "house"];
 
+            var ICONES_FILTRES = {
+                "search": "\\e8b6",
+                "calendar_month": "\\ebcc",
+            };
+
+            function appliquerIcônesFiltres() {
+                // Icône de recherche sur les champs dont le placeholder commence par "Rechercher"
+                var textes = doc.querySelectorAll('div[data-testid="stTextInput"]');
+                for (var i = 0; i < textes.length; i++) {
+                    var input = textes[i].querySelector('input');
+                    if (!input) continue;
+                    var ph = (input.getAttribute("placeholder") || "").toLowerCase();
+                    if (ph.indexOf("rechercher") !== 0) continue;
+                    if (textes[i].querySelector(".lamina-icone-recherche")) continue;
+                    textes[i].classList.add("lamina-filtre-champ");
+                    var span = doc.createElement("span");
+                    span.className = "lamina-icone-recherche lamina-icone";
+                    span.textContent = ICONES_FILTRES["search"];
+                    textes[i].appendChild(span);
+                    if (window.getComputedStyle(input).paddingLeft === "0px" || parseFloat(window.getComputedStyle(input).paddingLeft) < 40) {
+                        input.style.paddingLeft = "2.5rem";
+                    }
+                }
+                // Icône de calendrier sur le filtre de période (date range)
+                var dates = doc.querySelectorAll('div[data-testid="stDateInput"]');
+                for (var j = 0; j < dates.length; j++) {
+                    if (dates[j].querySelector(".lamina-icone-calendrier")) continue;
+                    dates[j].classList.add("lamina-filtre-champ");
+                    var span2 = doc.createElement("span");
+                    span2.className = "lamina-icone-calendrier lamina-icone";
+                    span2.textContent = ICONES_FILTRES["calendar_month"];
+                    dates[j].appendChild(span2);
+                }
+            }
+
             function appliquerClassesBoutons() {
                 var boutons = doc.querySelectorAll('div[data-testid="stButton"] button');
                 for (var i = 0; i < boutons.length; i++) {
@@ -189,6 +224,7 @@ st.iframe(
                 if (window.MutationObserver) {
                     var obs = new MutationObserver(function (mutations) {
                         appliquerClassesDelaye();
+                        appliquerIcônesFiltres();
                         if (!enAttente) return;
                         for (var i = 0; i < mutations.length; i++) {
                             if (voile && voile.contains(mutations[i].target)) continue;
@@ -199,6 +235,7 @@ st.iframe(
                     obs.observe(conteneur, { childList: true, subtree: true, characterData: true });
                 }
                 appliquerClassesBoutons();
+                appliquerIcônesFiltres();
             }
 
             doc.addEventListener("click", function (evt) {
@@ -304,6 +341,43 @@ st.markdown(
     div[data-testid="stDateInput"] div[data-baseweb="input"],
     div[data-testid="stTimeInput"] div[data-baseweb="input"] {
         transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    /* Icônes de recherche et de période sur les barres de filtres */
+    .lamina-filtre-champ {
+        position: relative;
+    }
+    .lamina-icone {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        left: 0.8rem;
+        color: #2563EB;
+        font-size: 1.3rem;
+        line-height: 1;
+        pointer-events: none;
+        z-index: 5;
+        font-family: "Material Symbols Rounded", "Material Icons", sans-serif;
+    }
+    .lamina-icone-calendrier {
+        color: #2563EB;
+    }
+    /* Alignement : recherche et période sur la même ligne, mêmes dimensions */
+    div[data-testid="stHorizontalBlock"]:has(div[data-testid="stDateInput"])
+        div[data-testid="stTextInput"] input {
+        min-height: 2.65rem !important;
+        padding-top: 0.25rem !important;
+        padding-bottom: 0.25rem !important;
+    }
+    div[data-testid="stHorizontalBlock"]:has(div[data-testid="stDateInput"])
+        div[data-testid="stDateInput"] div[data-baseweb="input"] {
+        min-height: 2.65rem !important;
+        display: flex;
+        align-items: center;
+    }
+    div[data-testid="stHorizontalBlock"]:has(div[data-testid="stDateInput"])
+        div[data-testid="stDateInput"] input {
+        padding-left: 2.5rem !important;
     }
     div[data-testid="stButton"] button:hover,
     div[data-testid="stButton"] button:active,

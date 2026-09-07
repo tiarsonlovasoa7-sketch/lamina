@@ -16,7 +16,7 @@ def texte_contient(texte, reference) -> bool:
 
 
 def zone_recherche(cle, placeholder="Rechercher...", label="Recherche"):
-    """Barre de recherche libre renvoyant le texte saisi."""
+    """Barre de recherche libre renvoyant le texte saisi (filtrage en direct)."""
     return st.text_input(
         label,
         key=cle,
@@ -31,6 +31,7 @@ def plage_dates(cle, label="Période"):
         label,
         value=(),
         key=cle,
+        label_visibility="collapsed",
     )
     if not selection:
         return None, None
@@ -46,8 +47,8 @@ def plage_dates(cle, label="Période"):
 
 
 def barre_recherche_et_dates(cle_prefixe, placeholder="Rechercher un titre, intervenant ou organisme..."):
-    """Barre combinee : recherche libre + periode, renvoyant (texte, date_debut, date_fin)."""
-    col_recherche, col_dates = st.columns([3, 2])
+    """Barre combinee : recherche libre + periode alignees, renvoyant (texte, date_debut, date_fin)."""
+    col_recherche, col_dates = st.columns([5, 4], vertical_alignment="center")
     with col_recherche:
         texte = zone_recherche(f"{cle_prefixe}_recherche", placeholder=placeholder)
     with col_dates:
