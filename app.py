@@ -137,6 +137,10 @@ st.iframe(
                 if (tid.indexOf("ExpandSidebarButton") !== -1) return true;
                 if (tid.indexOf("stPopover") !== -1) return true;
                 if (tid.indexOf("stMainMenu") !== -1) return true;
+                if ((el.getAttribute && el.getAttribute("aria-label") === "Close") ||
+                    (el.closest && el.closest('[data-testid="stToast"], [data-testid="stAlert"]'))) {
+                    return true;
+                }
                 return false;
             }
 
@@ -271,7 +275,8 @@ st.iframe(
                 var el = evt.target && evt.target.closest ?
                     (evt.target.closest('[data-testid="stSidebar"]') ||
                      evt.target.closest('[data-testid="stPopover"]') ||
-                     evt.target.closest('button[data-testid="stSidebarCollapseButton"], [data-testid="stSidebarCollapseButton"]')) :
+                     evt.target.closest('button[data-testid="stSidebarCollapseButton"], [data-testid="stSidebarCollapseButton"]') ||
+                     evt.target.closest('[data-testid="stToast"], [data-testid="stAlert"]')) :
                     null;
                 if (el) return;
                 replierSidebar();
@@ -388,6 +393,13 @@ st.markdown(
     div[data-testid="stHorizontalBlock"]:has(div[data-testid="stDateInput"])
         div[data-testid="stDateInput"] input {
         padding-left: 2.5rem !important;
+    }
+    /* Dégagement du texte du champ de début de période pour ne pas recouvrir l'icône calendrier */
+    div[data-testid="stDateInput"] div[data-range-field="start"] {
+        padding-left: 2.2rem !important;
+    }
+    div[data-testid="stDateInput"] div[data-range-field="start"] [role="group"] {
+        margin-left: 1rem !important;
     }
     div[data-testid="stButton"] button:hover,
     div[data-testid="stButton"] button:active,
