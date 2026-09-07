@@ -202,11 +202,13 @@ st.iframe(
                 var dates = doc.querySelectorAll('div[data-testid="stDateInput"]');
                 for (var j = 0; j < dates.length; j++) {
                     if (dates[j].querySelector(".lamina-icone-calendrier")) continue;
-                    dates[j].classList.add("lamina-filtre-champ");
+                    // L'icône est centrée dans la boîte de saisie (et non le widget, qui contient le libellé)
+                    var conteneur = dates[j].querySelector('[data-testid="stDateInputField"]') || dates[j];
+                    conteneur.classList.add("lamina-filtre-champ");
                     var span2 = doc.createElement("span");
                     span2.className = "lamina-icone-calendrier lamina-icone";
                     span2.textContent = ICONES_FILTRES["calendar_month"];
-                    dates[j].appendChild(span2);
+                    conteneur.appendChild(span2);
                 }
             }
 
@@ -400,6 +402,10 @@ st.markdown(
     }
     div[data-testid="stDateInput"] div[data-range-field="start"] [role="group"] {
         margin-left: 1rem !important;
+    }
+    /* Dégagement du texte pour un champ date simple (avec libellé), icône centrée dans la boîte */
+    div[data-testid="stDateInput"]:not(:has(div[data-range-field])) div[data-testid="stDateInputField"] [role="group"] {
+        margin-left: 2.5rem !important;
     }
     div[data-testid="stButton"] button:hover,
     div[data-testid="stButton"] button:active,
