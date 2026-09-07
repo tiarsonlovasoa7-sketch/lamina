@@ -65,12 +65,11 @@ def test_creation_espace_personnel():
 
     # Remplissage du formulaire de creation (onglet "Créer mon espace")
     email_perso = f"marie.perso.{UID}@example.com"
-    valeurs = {
-        0: "Durand", 1: "Marie", 2: email_perso,
-        3: "mdp2026perso", 4: "mdp2026perso",
-    }
-    for idx, valeur in valeurs.items():
-        at.text_input[idx].set_value(valeur)
+    at.text_input(key="perso_reg_nom").set_value("Durand")
+    at.text_input(key="perso_reg_prenom").set_value("Marie")
+    at.text_input(key="perso_reg_email").set_value(email_perso)
+    at.text_input(key="perso_reg_mdp").set_value("mdp2026perso")
+    at.text_input(key="perso_reg_mdp_conf").set_value("mdp2026perso")
     bouton_par_label(at, "Créer mon espace").click().run()
 
     # Connexion automatique : tableau de bord personnel
@@ -85,12 +84,12 @@ def test_creation_entreprise():
 
     entreprise = f"Technova{UID}"
     email_responsable = f"responsable.{UID}@technova.com"
-    valeurs = {
-        0: entreprise, 1: "Martin", 2: "Paul",
-        3: email_responsable, 4: "mdp2026equipe", 5: "mdp2026equipe",
-    }
-    for idx, valeur in valeurs.items():
-        at.text_input[idx].set_value(valeur)
+    at.text_input(key="equipe_create_entreprise").set_value(entreprise)
+    at.text_input(key="equipe_create_nom").set_value("Martin")
+    at.text_input(key="equipe_create_prenom").set_value("Paul")
+    at.text_input(key="equipe_create_email").set_value(email_responsable)
+    at.text_input(key="equipe_create_mdp").set_value("mdp2026equipe")
+    at.text_input(key="equipe_create_mdp_conf").set_value("mdp2026equipe")
     bouton_par_label(at, "Créer l'entreprise et mon compte").click().run()
 
     # Connexion automatique : tableau de bord Responsable
@@ -105,20 +104,19 @@ def test_reconnexion_personnel():
     bouton_contenant(at, "Mode personnel").click().run()
 
     email_perso = f"marie2.perso.{UID}@example.com"
-    valeurs = {
-        0: "Durand", 1: "Marie", 2: email_perso,
-        3: "mdp2026perso", 4: "mdp2026perso",
-    }
-    for idx, valeur in valeurs.items():
-        at.text_input[idx].set_value(valeur)
+    at.text_input(key="perso_reg_nom").set_value("Durand")
+    at.text_input(key="perso_reg_prenom").set_value("Marie")
+    at.text_input(key="perso_reg_email").set_value(email_perso)
+    at.text_input(key="perso_reg_mdp").set_value("mdp2026perso")
+    at.text_input(key="perso_reg_mdp_conf").set_value("mdp2026perso")
     bouton_par_label(at, "Créer mon espace").click().run()
 
     # Deconnexion puis reconnexion avec le meme compte (clic sur le nom, puis email + mot de passe)
     bouton_par_label(at, "Se déconnecter").click().run()
     bouton_contenant(at, "Mode personnel").click().run()
     bouton_contenant(at, "Durand Marie").click().run()
-    at.text_input[0].set_value(email_perso)
-    at.text_input[1].set_value("mdp2026perso")
+    at.text_input(key="perso_login_email").set_value(email_perso)
+    at.text_input(key="perso_login_mdp").set_value("mdp2026perso")
     bouton_par_label(at, "Se connecter").click().run()
 
     # Tableau de bord personnel a nouveau
@@ -132,12 +130,12 @@ def test_gestion_equipe_et_role_assistant():
 
     entreprise = f"BatiPro{UID}"
     email_responsable = f"responsable.{UID}@batipro.com"
-    valeurs = {
-        0: entreprise, 1: "Martin", 2: "Paul",
-        3: email_responsable, 4: "mdp2026equipe", 5: "mdp2026equipe",
-    }
-    for idx, valeur in valeurs.items():
-        at.text_input[idx].set_value(valeur)
+    at.text_input(key="equipe_create_entreprise").set_value(entreprise)
+    at.text_input(key="equipe_create_nom").set_value("Martin")
+    at.text_input(key="equipe_create_prenom").set_value("Paul")
+    at.text_input(key="equipe_create_email").set_value(email_responsable)
+    at.text_input(key="equipe_create_mdp").set_value("mdp2026equipe")
+    at.text_input(key="equipe_create_mdp_conf").set_value("mdp2026equipe")
     bouton_par_label(at, "Créer l'entreprise et mon compte").click().run()
 
     # Ajout d'un(e) assistant(e) depuis la page Gestion de l'équipe
@@ -145,10 +143,10 @@ def test_gestion_equipe_et_role_assistant():
     assert "Gestion de l'équipe" in titres(at)
 
     email_assistant = f"sophie.{UID}@batipro.com"
-    at.text_input[0].set_value("Sophie Leroux")
-    at.text_input[1].set_value(email_assistant)
-    at.text_input[2].set_value("mdpassist2026")
-    at.text_input[3].set_value("mdpassist2026")
+    at.text_input(key="membre_add_nom").set_value("Sophie Leroux")
+    at.text_input(key="membre_add_email").set_value(email_assistant)
+    at.text_input(key="membre_add_mdp").set_value("mdpassist2026")
+    at.text_input(key="membre_add_mdp_conf").set_value("mdpassist2026")
     bouton_par_label(at, "Ajouter l'assistant(e)").click().run()
 
     # L'assistant(e) apparait dans la liste de l'equipe
@@ -160,8 +158,8 @@ def test_gestion_equipe_et_role_assistant():
     bouton_contenant(at, "Mode équipe").click().run()
     bouton_contenant(at, entreprise).click().run()
     bouton_contenant(at, "Sophie Leroux").click().run()
-    at.text_input[0].set_value(email_assistant)
-    at.text_input[1].set_value("mdpassist2026")
+    at.text_input(key="equipe_login_email").set_value(email_assistant)
+    at.text_input(key="equipe_login_mdp").set_value("mdpassist2026")
     bouton_par_label(at, "Se connecter").click().run()
 
     # L'assistant(e) accede au tableau de bord sans la gestion d'equipe
@@ -273,6 +271,40 @@ def test_reset_securite_et_isolation_modes():
     assert res is False
     print("OK test_reset_securite_et_isolation_modes")
 
+def test_filtres_recherche_et_dates():
+    from datetime import datetime
+    from ui.filtres import filtrer_objets, filtrer_rdv, texte_contient
+    from database import RendezVous
+
+    assert texte_contient("ministere", "Ministère & Cie") is True
+    assert texte_contient("alpha", "Béta") is False
+
+    rdvs = [
+        RendezVous(id=1, titre="Audience Ministère", intervenant="M. Alpha", organisme="Ministère", date_heure=datetime(2026, 9, 1, 9, 0), statut="Confirme"),
+        RendezVous(id=2, titre="Réunion interne", intervenant="Mme Beta", organisme="Préfecture", date_heure=datetime(2026, 9, 3, 10, 0), statut="En attente"),
+        RendezVous(id=3, titre="Point presse", intervenant="M. Alpha", organisme="Mairie", date_heure=datetime(2026, 9, 10, 14, 0), statut="Confirme"),
+    ]
+    # Recherche libre sur titre/intervenant/organisme (accents tolérés)
+    assert [r.id for r in filtrer_rdv(rdvs, "ministère", None, None)] == [1]
+    assert [r.id for r in filtrer_rdv(rdvs, "alpha", None, None)] == [1, 3]
+    # Borne basse de periode uniquement
+    assert [r.id for r in filtrer_rdv(rdvs, "", datetime(2026, 9, 3).date(), None)] == [2, 3]
+    # Bornes basse et haute
+    assert [r.id for r in filtrer_rdv(rdvs, "", datetime(2026, 9, 1).date(), datetime(2026, 9, 3).date())] == [1, 2]
+    # Aucun filtre : tout est conservé
+    assert len(filtrer_rdv(rdvs, "", None, None)) == 3
+
+    class Personne:
+        def __init__(self, nom, mail):
+            self.nom = nom
+            self.mail = mail
+
+    personnes = [Personne("Durand Marie", "marie@x.fr"), Personne("Leroux Sophie", "sophie@x.fr")]
+    assert [p.nom for p in filtrer_objets(personnes, ["nom", "mail"], "leroux")] == ["Leroux Sophie"]
+    assert [p.nom for p in filtrer_objets(personnes, ["nom", "mail"], "MARIE")] == ["Durand Marie"]
+    assert [p.nom for p in filtrer_objets(personnes, ["nom", "mail"], "")] == ["Durand Marie", "Leroux Sophie"]
+    print("OK test_filtres_recherche_et_dates")
+
 if __name__ == "__main__":
     test_bienvenue()
     test_creation_espace_personnel()
@@ -282,4 +314,5 @@ if __name__ == "__main__":
     test_annuaire_comptes()
     test_generation_pdf_caracteres_speciaux()
     test_reset_securite_et_isolation_modes()
+    test_filtres_recherche_et_dates()
     print("Tous les tests sont passés.")

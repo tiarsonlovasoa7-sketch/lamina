@@ -9,6 +9,7 @@ from database import RendezVous, Utilisateur, hash_password
 from services.emails import envoyer_email_auto, template_rdv_accepte, template_rdv_planifie, template_rdv_refuse
 from services.pdf import generer_pdf_brief
 from ui.components import afficher_chargement, badge_priorite, badge_statut, page_header, section_title, show_notification, stat_card
+from ui.filtres import barre_recherche_et_dates, filtrer_rdv
 from ui.team import _section_liste_membres
 from utils import clean_str, format_id, sanitize_text, validate_password_strength
 
@@ -18,9 +19,14 @@ def page_dashboard(user, db):
     page_header("Pilotage et indicateurs clés", "Vue d'ensemble de l'activité des audiences")
 
     tous_rdvs = db.query(RendezVous).all()
+    texte_filtre, date_debut, date_fin = barre_recherche_et_dates("dash")
+    tous_rdvs = filtrer_rdv(tous_rdvs, texte_filtre, date_debut, date_fin)
     confirmes = [r for r in tous_rdvs if r.statut == "Confirme"]
     en_attente = [r for r in tous_rdvs if r.statut == "En attente"]
     refuses = [r for r in tous_rdvs if r.statut == "Refuse"]
+
+    if texte_filtre or date_debut or date_fin:
+        st.caption(f"Filtre actif : {len(tous_rdvs)} rendez-vous affiché(s).")
 
     # Affichage des cartes d indicateurs de performance
     col1, col2, col3, col4 = st.columns(4)
@@ -154,8 +160,8 @@ def page_dashboard(user, db):
 
     st.space("medium")
 
-    recent_reponses_confirmes = db.query(RendezVous).filter(RendezVous.statut == "Confirme").order_by(RendezVous.id.desc()).limit(3).all()
-    recent_reponses_refuses = db.query(RendezVous).filter(RendezVous.statut == "Refuse").order_by(RendezVous.id.desc()).limit(3).all()
+    recent_reponses_confirmes = sorted(confirmes, key=lambda r: r.id, reverse=True)[:3]
+    recent_reponses_refuses = sorted(refuses, key=lambda r: r.id, reverse=True)[:3]
 
     if user['role'] == "Directeur":
         with st.container(border=True):
@@ -279,9 +285,14 @@ def page_validation(user, db):
     page_header("Arbitrage et gestion des audiences", "Validez, modifiez ou refusez les demandes en attente")
 
     demandes = db.query(RendezVous).filter(RendezVous.statut == "En attente").order_by(RendezVous.date_heure).all()
+    texte_filtre, date_debut, date_fin = barre_recherche_et_dates("val")
+    demandes = filtrer_rdv(demandes, texte_filtre, date_debut, date_fin)
 
     if not demandes:
-        st.success("Aucune demande d'audience en attente de validation.")
+        if texte_filtre or date_debut or date_fin:
+            st.warning("Aucune demande ne correspond aux critères de recherche.")
+        else:
+            st.success("Aucune demande d'audience en attente de validation.")
     else:
         st.info(f"Vous avez {len(demandes)} demande(s) en attente d'arbitrage.")
         for rdv in demandes:
@@ -371,10 +382,10 @@ def page_gestion_equipe(user, db):
     with st.container(border=True):
         section_title("Ajouter une Assistant(e)")
         with st.form("form_add_membre"):
-            nom_membre = st.text_input("Nom et prénom de l'assistant(e)", placeholder="Entrez le nom complet")
-            email_membre = st.text_input("Adresse e-mail", placeholder="Entrez l'e-mail de l'assistant(e)")
-            pass_membre = st.text_input("Mot de passe (8 caractères min)", type="password", placeholder="Saisissez votre mot de passe")
-            pass_membre_conf = st.text_input("Confirmer le mot de passe", type="password", placeholder="Confirmez votre mot de passe")
+            nom_membre = st.text_input("Nom et prénom de l'assistant(e)", placeholder="Entrez le nom complet", key="membre_add_nom")
+            email_membre = st.text_input("Adresse e-mail", placeholder="Entrez l'e-mail de l'assistant(e)", key="membre_add_email")
+            pass_membre = st.text_input("Mot de passe (8 caractères min)", type="password", placeholder="Saisissez votre mot de passe", key="membre_add_mdp")
+            pass_membre_conf = st.text_input("Confirmer le mot de passe", type="password", placeholder="Confirmez votre mot de passe", key="membre_add_mdp_conf")
 
             if st.form_submit_button("Ajouter l'assistant(e)", icon=":material/person_add:"):
                 nom_clean = sanitize_text(nom_membre)
@@ -413,9 +424,14 @@ def page_planning(user, db):
     page_header("Planning des audiences validées", "Consultez les audiences confirmées et téléchargez leur brief")
 
     rdvs = db.query(RendezVous).filter(RendezVous.statut == "Confirme").order_by(RendezVous.date_heure).all()
+    texte_filtre, date_debut, date_fin = barre_recherche_et_dates("plan")
+    rdvs = filtrer_rdv(rdvs, texte_filtre, date_debut, date_fin)
 
     if not rdvs:
-        st.info("Aucune audience confirmée au planning.")
+        if texte_filtre or date_debut or date_fin:
+            st.warning("Aucune audience ne correspond aux critères de recherche.")
+        else:
+            st.info("Aucune audience confirmée au planning.")
     else:
         for rdv in rdvs:
             with st.expander(f"{format_id(rdv.id)} | {rdv.date_heure.strftime('%d/%m/%Y %H:%M')} | {rdv.titre} ({rdv.organisme})"):
@@ -481,6 +497,11 @@ def page_historique(user, db):
                     if col_cancel.form_submit_button("Annuler"):
                         st.session_state.editing_rdv_id = None
                         afficher_chargement()
+
+    texte_filtre, date_debut, date_fin = barre_recherche_et_dates("hist")
+    tous = filtrer_rdv(tous, texte_filtre, date_debut, date_fin)
+    if texte_filtre or date_debut or date_fin:
+        st.caption(f"Filtre actif : {len(tous)} demande(s) affichée(s).")
 
     data = []
     for r in tous:

@@ -5,6 +5,7 @@ from database import Compte, SessionLocal, Utilisateur, creer_compte, creer_sess
 from services.auth import _verifier_ancien_mdp, confirmer_reset, envoyer_code_reset, login
 from ui.components import afficher_chargement, section_title, show_notification, styler_champs_login
 from ui.dialogs import _annuler_action_perso, _fermer_menu_fixer_action, dialog_supprimer_compte_perso
+from ui.filtres import filtrer_objets, zone_recherche
 from utils import clean_str, sanitize_text, validate_password_strength
 
 
@@ -18,6 +19,10 @@ def _section_liste_comptes_perso():
         styler_champs_login()
         if "perso_action" not in st.session_state:
             st.session_state.perso_action = None
+        recherche_perso = zone_recherche("perso_recherche_liste", placeholder="Rechercher un espace personnel...")
+        comptes = filtrer_objets(comptes, ["nom"], recherche_perso)
+        if not comptes:
+            st.info("Aucun espace personnel ne correspond à votre recherche.")
         for compte in comptes:
             col_bouton, col_menu = st.columns([4, 1], vertical_alignment="center")
             with col_bouton:
@@ -132,8 +137,8 @@ def interface_personnel():
 
                     styler_champs_login()
                     with st.form("login_perso_mdp"):
-                        email_input = st.text_input("Adresse e-mail", placeholder="Entrez votre e-mail")
-                        password_input = st.text_input("Mot de passe", type="password", placeholder="Saisissez votre mot de passe")
+                        email_input = st.text_input("Adresse e-mail", placeholder="Entrez votre e-mail", key="perso_login_email")
+                        password_input = st.text_input("Mot de passe", type="password", placeholder="Saisissez votre mot de passe", key="perso_login_mdp")
                         btn_connexion = st.form_submit_button("Se connecter", type="primary", icon=":material/login:")
                         if btn_connexion:
                             email_clean = clean_str(email_input).lower()
@@ -156,11 +161,11 @@ def interface_personnel():
             with tab_creation:
                 section_title("Créer votre espace personnel")
                 with st.form("register_form_perso"):
-                    nom = st.text_input("Nom", placeholder="Entrez votre nom de famille")
-                    prenom = st.text_input("Prénom", placeholder="Entrez votre prénom")
-                    email_reg = st.text_input("Adresse e-mail", placeholder="Entrez votre e-mail")
-                    pass_reg = st.text_input("Mot de passe (8 caractères min)", type="password", placeholder="Saisissez votre mot de passe")
-                    pass_confirm = st.text_input("Confirmer le mot de passe", type="password", placeholder="Confirmez votre mot de passe")
+                    nom = st.text_input("Nom", placeholder="Entrez votre nom de famille", key="perso_reg_nom")
+                    prenom = st.text_input("Prénom", placeholder="Entrez votre prénom", key="perso_reg_prenom")
+                    email_reg = st.text_input("Adresse e-mail", placeholder="Entrez votre e-mail", key="perso_reg_email")
+                    pass_reg = st.text_input("Mot de passe (8 caractères min)", type="password", placeholder="Saisissez votre mot de passe", key="perso_reg_mdp")
+                    pass_confirm = st.text_input("Confirmer le mot de passe", type="password", placeholder="Confirmez votre mot de passe", key="perso_reg_mdp_conf")
 
                     if st.form_submit_button("Créer mon espace", icon=":material/add_circle:"):
                         email_clean = clean_str(email_reg).lower()

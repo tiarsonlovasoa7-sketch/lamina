@@ -5,6 +5,7 @@ from database import Compte, SessionLocal, Utilisateur, creer_compte, creer_sess
 from services.auth import _verifier_ancien_mdp, confirmer_reset, envoyer_code_reset, login
 from ui.components import afficher_chargement, section_title, show_notification, styler_champs_login
 from ui.dialogs import _annuler_action_equipe, _annuler_action_membre, _fermer_menu_fixer_action, dialog_supprimer_entreprise, dialog_supprimer_membre
+from ui.filtres import filtrer_objets, zone_recherche
 from utils import clean_str, libelle_role, sanitize_text, validate_password_strength
 
 
@@ -18,6 +19,10 @@ def _section_liste_entreprises():
         styler_champs_login()
         if "equipe_action" not in st.session_state:
             st.session_state.equipe_action = None
+        recherche_ent = zone_recherche("equipe_recherche_liste", placeholder="Rechercher une entreprise...")
+        comptes = filtrer_objets(comptes, ["nom"], recherche_ent)
+        if not comptes:
+            st.info("Aucune entreprise ne correspond à votre recherche.")
         for compte in comptes:
             col_bouton, col_menu = st.columns([4, 1], vertical_alignment="center")
             with col_bouton:
@@ -105,6 +110,10 @@ def _section_liste_membres():
         else:
             if "action_membre" not in st.session_state:
                 st.session_state.action_membre = None
+            recherche_membre = zone_recherche("equipe_membres_recherche", placeholder="Rechercher un membre...")
+            membres = filtrer_objets(membres, ["nom_complet", "email"], recherche_membre)
+            if not membres:
+                st.info("Aucun membre ne correspond à votre recherche.")
             for m in membres:
                 with st.container(border=True):
                     col_info, col_menu = st.columns([3, 1])
@@ -217,6 +226,8 @@ def interface_equipe():
                     else:
                         st.write("Choisissez votre compte :")
                         styler_champs_login()
+                        recherche_membre = zone_recherche("equipe_recherche_membre", placeholder="Rechercher un membre...")
+                        membres = filtrer_objets(membres, ["nom_complet", "email"], recherche_membre)
                         for membre in membres:
                             if st.button(membre.nom_complet, key=f"membre_{entreprise_nom}_{membre.id}", icon=":material/person:", width="stretch"):
                                 st.session_state.equipe_selection_membre = membre.nom_complet
@@ -237,8 +248,8 @@ def interface_equipe():
 
                     styler_champs_login()
                     with st.form("login_equipe_mdp"):
-                        email_input = st.text_input("Adresse e-mail", placeholder="Entrez votre e-mail")
-                        password_input = st.text_input("Mot de passe", type="password", placeholder="Saisissez votre mot de passe")
+                        email_input = st.text_input("Adresse e-mail", placeholder="Entrez votre e-mail", key="equipe_login_email")
+                        password_input = st.text_input("Mot de passe", type="password", placeholder="Saisissez votre mot de passe", key="equipe_login_mdp")
                         btn_join = st.form_submit_button("Se connecter", type="primary", icon=":material/login:")
                         if btn_join:
                             email_clean = clean_str(email_input).lower()
@@ -263,12 +274,12 @@ def interface_equipe():
             with tab_creer:
                 section_title("Créer votre entreprise")
                 with st.form("create_company_form"):
-                    nom_entreprise = st.text_input("Nom de l'entreprise", placeholder="Entrez le nom de l'entreprise")
-                    nom = st.text_input("Nom du Responsable", placeholder="Entrez votre nom de famille")
-                    prenom = st.text_input("Prénom du Responsable", placeholder="Entrez votre prénom")
-                    email_reg = st.text_input("Adresse e-mail du Responsable", placeholder="Entrez votre e-mail")
-                    pass_reg = st.text_input("Mot de passe (8 caractères min)", type="password", placeholder="Saisissez votre mot de passe")
-                    pass_confirm = st.text_input("Confirmer le mot de passe", type="password", placeholder="Confirmez votre mot de passe")
+                    nom_entreprise = st.text_input("Nom de l'entreprise", placeholder="Entrez le nom de l'entreprise", key="equipe_create_entreprise")
+                    nom = st.text_input("Nom du Responsable", placeholder="Entrez votre nom de famille", key="equipe_create_nom")
+                    prenom = st.text_input("Prénom du Responsable", placeholder="Entrez votre prénom", key="equipe_create_prenom")
+                    email_reg = st.text_input("Adresse e-mail du Responsable", placeholder="Entrez votre e-mail", key="equipe_create_email")
+                    pass_reg = st.text_input("Mot de passe (8 caractères min)", type="password", placeholder="Saisissez votre mot de passe", key="equipe_create_mdp")
+                    pass_confirm = st.text_input("Confirmer le mot de passe", type="password", placeholder="Confirmez votre mot de passe", key="equipe_create_mdp_conf")
 
                     if st.form_submit_button("Créer l'entreprise et mon compte", icon=":material/apartment:"):
                         entreprise_clean = clean_str(nom_entreprise)
