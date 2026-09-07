@@ -1,6 +1,7 @@
 # Pages de l'espace authentifie
 from datetime import datetime, timedelta
 
+import altair as alt
 import pandas as pd
 import streamlit as st
 
@@ -32,12 +33,12 @@ def page_dashboard(user, db):
     with col4:
         stat_card("Demandes refusées", len(refuses))
 
-    # Graphiques de synthese
+    # Graphiques de synthese (representations graphiques / schemas statistiques)
     if tous_rdvs:
         df_rdv = pd.DataFrame([{
             "statut": r.statut,
             "priorite": r.priorite,
-            "date_rdv": r.date_heure.date(),
+            "date_rdv": r.date_heure.date().isoformat(),
             "heure": r.date_heure.strftime("%H:%M"),
             "titre": r.titre,
             "intervenant": r.intervenant,
@@ -46,30 +47,100 @@ def page_dashboard(user, db):
 
         section_title("Graphiques de synthèse")
 
-        rep_statut = df_rdv["statut"].value_counts()
-        rep_priorite = df_rdv["priorite"].value_counts()
-        rep_date = df_rdv["date_rdv"].value_counts().sort_index()
+        statut_libelles = {"Confirme": "Confirmé", "En attente": "En attente", "Refuse": "Refusé"}
+        ordre_statut = ["En attente", "Confirmé", "Refusé"]
+        palette_statut = {"En attente": "#F59E0B", "Confirmé": "#16A34A", "Refusé": "#DC2626"}
+        ordre_priorite = ["Basse", "Moyenne", "Haute"]
+        palette_priorite = {"Basse": "#9CA3AF", "Moyenne": "#2563EB", "Haute": "#DC2626"}
 
-        c_graph1, c_graph2 = st.columns(2)
-        with c_graph1:
-            st.markdown("#### Demandes par statut")
-            st.bar_chart(rep_statut, x_label="Statut", y_label="Nombre de demandes", height=280, color="#C0392B")
-        with c_graph2:
-            st.markdown("#### Rendez-vous par date")
-            st.bar_chart(rep_date, x_label="Date", y_label="Nombre de RDV", height=280, color="#2563EB")
+        # Representation par statut (diagramme en barres colore par statut)
+        df_statut = (df_rdv["statut"].map(statut_libelles)
+                     .value_counts().rename("count").rename_axis("Statut").reset_index())
+        df_statut["Statut"] = pd.Categorical(df_statut["Statut"], categories=ordre_statut, ordered=True)
+        df_statut = df_statut.sort_values("Statut")
 
+        rep_priorite = df_rdv["priorite"].value_counts().rename("count").rename_axis("Priorité").reset_index()
+        rep_priorite["Priorité"] = pd.Categorical(rep_priorite["Priorité"], categories=ordre_priorite, ordered=True)
+        rep_priorite = rep_priorite.sort_values("Priorité")
+
+        # Representation par date (evolution des RDV dans le temps)
+        df_date = (df_rdv["date_rdv"].value_counts().rename("count")
+                   .rename_axis("Date").reset_index().sort_values("Date"))
+
+        # Donut : repartition des statuts (camembert)
+        base_donut = alt.Chart(df_statut).mark_arc(innerRadius=42, outerRadius=86).encode(
+            theta=alt.Theta("count:Q", stack=True),
+            color=alt.Color("Statut:N",
+                            scale=alt.Scale(domain=ordre_statut, range=[palette_statut[s] for s in ordre_statut]),
+                            legend=alt.Legend(title="Statut", orient="bottom")),
+            tooltip=[alt.Tooltip("Statut:N", title="Statut"), alt.Tooltip("count:Q", title="Nombre")],
+        ).properties(height=330)
+
+        # Barres par statut
+        barres_statut = alt.Chart(df_statut).mark_bar(cornerRadiusTopLeft=6, cornerRadiusTopRight=6).encode(
+            x=alt.X("Statut:N", sort=ordre_statut, title=None),
+            y=alt.Y("count:Q", title="Nombre de demandes"),
+            color=alt.Color("Statut:N",
+                            scale=alt.Scale(domain=ordre_statut, range=[palette_statut[s] for s in ordre_statut]),
+                            legend=None),
+            tooltip=[alt.Tooltip("Statut:N"), alt.Tooltip("count:Q", title="Nombre")],
+        ).properties(height=330)
+
+        lignes_statut = alt.Chart(df_statut).mark_text(dy=-8).encode(
+            x=alt.X("Statut:N", sort=ordre_statut, title=None),
+            y=alt.Y("count:Q", title=None),
+            text="count:Q",
+            color=alt.value("#374151"),
+        )
+
+        # Barres horizontales par priorite
+        barres_priorite = alt.Chart(rep_priorite).mark_bar(cornerRadiusEnd=6).encode(
+            y=alt.Y("Priorité:N", sort=ordre_priorite, title=None),
+            x=alt.X("count:Q", title="Nombre de demandes"),
+            color=alt.Color("Priorité:N",
+                            scale=alt.Scale(domain=ordre_priorite, range=[palette_priorite[p] for p in ordre_priorite]),
+                            legend=None),
+            tooltip=[alt.Tooltip("Priorité:N"), alt.Tooltip("count:Q", title="Nombre")],
+        ).properties(height=330)
+
+        lignes_priorite = alt.Chart(rep_priorite).mark_text(dx=6, align="left").encode(
+            y=alt.Y("Priorité:N", sort=ordre_priorite, title=None),
+            x=alt.X("count:Q", title=None),
+            text="count:Q",
+            color=alt.value("#374151"),
+        )
+
+        # Evolution par date (courbe + points)
+        evolution = alt.Chart(df_date).mark_line(point=True, strokeWidth=3).encode(
+            x=alt.X("Date:T", title="Date", axis=alt.Axis(format="%d/%m", labelAngle=-40)),
+            y=alt.Y("count:Q", title="Nombre de RDV"),
+            tooltip=[alt.Tooltip("Date:T", title="Date", format="%d/%m/%Y"), alt.Tooltip("count:Q", title="Nombre")],
+        ).properties(height=330).configure_point(size=90, fill="#C0392B")
+
+        # Ligne 1 : donut (statuts) + barres (statuts)
+        st.markdown("#### Répartition et nombre de demandes par statut")
+        col_g1, col_g2 = st.columns(2)
+        with col_g1:
+            st.altair_chart(base_donut, use_container_width=True)
+        with col_g2:
+            st.altair_chart(barres_statut + lignes_statut, use_container_width=True)
+
+        # Ligne 2 : evolution par date + barres horizontales priorite
+        st.markdown("#### Évolution des rendez-vous dans le temps")
+        st.altair_chart(evolution, use_container_width=True)
         st.markdown("#### Demandes par priorité")
-        st.bar_chart(rep_priorite, x_label="Priorité", y_label="Nombre de demandes", height=240, color="#B45309")
+        st.altair_chart(barres_priorite + lignes_priorite, use_container_width=True)
 
         # Resume des rendez-vous groupe par date
         section_title("Résumé des rendez-vous par date")
-        for date_v in sorted(rep_date.index):
-            rdvs_jour = [r for r in tous_rdvs if r.date_heure.date() == date_v]
+        for date_v in sorted(set(df_rdv["date_rdv"])):
+            jour = pd.Timestamp(date_v).date()
+            rdvs_jour = [r for r in tous_rdvs if r.date_heure.date() == jour]
             rdvs_jour.sort(key=lambda x: x.date_heure)
             nb_conf = sum(1 for r in rdvs_jour if r.statut == "Confirme")
             nb_att = sum(1 for r in rdvs_jour if r.statut == "En attente")
             nb_ref = sum(1 for r in rdvs_jour if r.statut == "Refuse")
-            label = (f"{date_v.strftime('%A %d/%m/%Y')} — {len(rdvs_jour)} RDV(s) "
+            label = (f"{jour.strftime('%A %d/%m/%Y')} — {len(rdvs_jour)} RDV(s) "
                      f"({nb_conf} confirmé(s), {nb_att} en attente, {nb_ref} refusé(s))")
             with st.expander(label, expanded=False):
                 for r in rdvs_jour:
