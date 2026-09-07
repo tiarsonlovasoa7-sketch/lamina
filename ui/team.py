@@ -1,11 +1,95 @@
 # Interfaces de connexion et de gestion du mode equipe
 import streamlit as st
 
-from database import Utilisateur, creer_compte, creer_session_sur, generer_chemin_base, hash_password, lister_comptes, lister_utilisateurs, trouver_compte
+from database import Compte, SessionLocal, Utilisateur, creer_compte, creer_session_sur, generer_chemin_base, hash_password, lister_comptes, lister_utilisateurs, trouver_compte
 from services.auth import _verifier_ancien_mdp, confirmer_reset, envoyer_code_reset, login
 from ui.components import afficher_chargement, section_title, show_notification, styler_champs_login
-from ui.dialogs import _annuler_action_membre, _fermer_menu_fixer_action, dialog_supprimer_membre
+from ui.dialogs import _annuler_action_equipe, _annuler_action_membre, _fermer_menu_fixer_action, dialog_supprimer_entreprise, dialog_supprimer_membre
 from utils import clean_str, libelle_role, sanitize_text, validate_password_strength
+
+
+@st.fragment
+def _section_liste_entreprises():
+    """Liste des entreprises + panneau d'action (menu Modifier/Supprimer)."""
+    comptes = lister_comptes(mode="equipe")
+    if not comptes:
+        st.info("Aucune entreprise créée pour le moment. Créez la vôtre dans l'onglet « Créer une entreprise ».")
+    else:
+        styler_champs_login()
+        if "equipe_action" not in st.session_state:
+            st.session_state.equipe_action = None
+        for compte in comptes:
+            col_bouton, col_menu = st.columns([4, 1], vertical_alignment="center")
+            with col_bouton:
+                if st.button(compte.nom, key=f"equipe_{compte.id}", icon=":material/business:", width="stretch"):
+                    st.session_state.equipe_selection_chemin = compte.chemin_db
+                    st.session_state.equipe_selection_nom = compte.nom
+                    st.session_state.equipe_selection_membre = None
+                    st.session_state.equipe_action = None
+                    afficher_chargement()
+            with col_menu:
+                with st.popover("", icon=":material/more_vert:", key=f"equipe_menu_{compte.id}", on_change="rerun", width="stretch"):
+                    st.button("Modifier le mot de passe", key=f"equipe_action_mdp_{compte.id}", icon=":material/password:", width="stretch",
+                              on_click=lambda cid=compte.id, cmenu=f"equipe_menu_{compte.id}": _fermer_menu_fixer_action(cmenu, "equipe", ("mdp", cid)))
+                    st.write("")
+                    st.button("Supprimer le compte", key=f"equipe_action_del_{compte.id}", icon=":material/delete:", width="stretch",
+                              on_click=lambda cid=compte.id, cmenu=f"equipe_menu_{compte.id}": _fermer_menu_fixer_action(cmenu, "equipe", ("del", cid)))
+
+        # Panneau d'action du menu d'une entreprise
+        action = st.session_state.equipe_action
+        if action:
+            act, cid = action
+            session_dir = SessionLocal()
+            try:
+                compte_act = session_dir.query(Compte).filter(Compte.id == cid).first()
+            finally:
+                session_dir.close()
+            if compte_act is None:
+                st.session_state.equipe_action = None
+            elif act == "mdp":
+                with st.container(border=True):
+                    section_title(f"Modifier le mot de passe — {compte_act.nom}")
+                    with st.form(f"equipe_form_mdp_{cid}"):
+                        ancien_mdp = st.text_input("Ancien mot de passe (Responsable)", type="password", placeholder="Saisissez l'ancien mot de passe")
+                        nouveau_mdp = st.text_input("Nouveau mot de passe (8 caractères min)", type="password", placeholder="Saisissez le nouveau mot de passe")
+                        nouveau_mdp_conf = st.text_input("Confirmer le nouveau mot de passe", type="password", placeholder="Confirmez le nouveau mot de passe")
+                        btn_valider = st.form_submit_button("Valider le nouveau mot de passe", icon=":material/save:")
+                        if btn_valider:
+                            pass_clean = clean_str(nouveau_mdp)
+                            old_clean = clean_str(ancien_mdp)
+                            if not old_clean or not pass_clean or not clean_str(nouveau_mdp_conf):
+                                show_notification("Veuillez remplir tous les champs.", type_notif="error")
+                            elif pass_clean != clean_str(nouveau_mdp_conf):
+                                show_notification("Les mots de passe ne correspondent pas.", type_notif="error")
+                            elif not _verifier_ancien_mdp(compte_act.chemin_db, compte_act.email, old_clean):
+                                show_notification("L'ancien mot de passe est incorrect.", type_notif="error")
+                            else:
+                                is_strong, msg_strength = validate_password_strength(pass_clean)
+                                if not is_strong:
+                                    show_notification(msg_strength, type_notif="error")
+                                else:
+                                    tdb = creer_session_sur(compte_act.chemin_db)
+                                    try:
+                                        util = None
+                                        if compte_act.email:
+                                            util = tdb.query(Utilisateur).filter(Utilisateur.email == compte_act.email).first()
+                                        if util is None:
+                                            util = tdb.query(Utilisateur).first()
+                                        if util:
+                                            util.mot_de_passe_hash = hash_password(pass_clean)
+                                            tdb.commit()
+                                            st.session_state.equipe_action = None
+                                            st.session_state.flash_msg = f"Le mot de passe de {compte_act.nom} a été modifié."
+                                            st.session_state.flash_type = "success"
+                                            afficher_chargement()
+                                        else:
+                                            show_notification("Utilisateur introuvable dans la base de données.", type_notif="error")
+                                    finally:
+                                        tdb.close()
+                    st.button("Annuler", key=f"equipe_annuler_mdp_{cid}", icon=":material/close:",
+                              on_click=_annuler_action_equipe)
+            elif act == "del":
+                dialog_supprimer_entreprise(cid, compte_act.nom)
 
 
 @st.fragment
@@ -91,6 +175,7 @@ def interface_equipe():
             st.session_state.equipe_selection_membre = None
             st.session_state.equipe_selection_libelle = None
             st.session_state.action_membre = None
+            st.session_state.equipe_action = None
             afficher_chargement()
     st.space("small")
     styler_champs_login()
@@ -111,17 +196,7 @@ def interface_equipe():
                     st.session_state.equipe_selection_membre = None
 
                 if not st.session_state.equipe_selection_chemin:
-                    comptes = lister_comptes(mode="equipe")
-                    if not comptes:
-                        st.info("Aucune entreprise créée pour le moment. Créez la vôtre dans l'onglet « Créer une entreprise ».")
-                    else:
-                        styler_champs_login()
-                        for compte in comptes:
-                            if st.button(compte.nom, key=f"equipe_{compte.id}", icon=":material/business:", width="stretch"):
-                                st.session_state.equipe_selection_chemin = compte.chemin_db
-                                st.session_state.equipe_selection_nom = compte.nom
-                                st.session_state.equipe_selection_membre = None
-                                afficher_chargement()
+                    _section_liste_entreprises()
                 elif not st.session_state.equipe_selection_membre:
                     entreprise_nom = st.session_state.equipe_selection_nom
                     entreprise_chemin = st.session_state.equipe_selection_chemin
@@ -131,6 +206,7 @@ def interface_equipe():
                             st.session_state.equipe_selection_chemin = None
                             st.session_state.equipe_selection_nom = None
                             st.session_state.equipe_selection_membre = None
+                            st.session_state.equipe_action = None
                             afficher_chargement()
                     with col_info2:
                         st.caption(f"Entreprise sélectionnée : {entreprise_nom}")

@@ -109,6 +109,7 @@ def logout():
     st.session_state.equipe_selection_libelle = None
     st.session_state.perso_action = None
     st.session_state.action_membre = None
+    st.session_state.equipe_action = None
 
 
 def envoyer_code_reset(clean_mail, mode=None, entreprise=None):

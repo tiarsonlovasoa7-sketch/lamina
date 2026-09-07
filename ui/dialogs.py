@@ -11,6 +11,8 @@ def _fermer_menu_fixer_action(cle_menu, type_action, action):
         st.session_state[cle_menu] = False
     if type_action == "perso":
         st.session_state.perso_action = action
+    elif type_action == "equipe":
+        st.session_state.equipe_action = action
     else:
         st.session_state.action_membre = action
 
@@ -21,6 +23,10 @@ def _annuler_action_perso():
 
 def _annuler_action_membre():
     st.session_state.action_membre = None
+
+
+def _annuler_action_equipe():
+    st.session_state.equipe_action = None
 
 
 @st.dialog("Supprimer l'espace personnel", width="small", icon=":material/person_remove:", on_dismiss=_annuler_action_perso)
@@ -39,12 +45,45 @@ def dialog_supprimer_compte_perso(compte_id, compte_nom):
                 show_notification(f"Erreur lors de la suppression : {erreur}", type_notif="error")
             else:
                 st.session_state.perso_action = None
+                st.session_state.perso_selection_nom = None
+                st.session_state.perso_selection_chemin = None
+                st.session_state.tenant_db = None
                 st.session_state.flash_msg = f"Espace personnel {compte_nom} supprimé."
                 st.session_state.flash_type = "success"
                 afficher_chargement()
     with col_annul:
         if st.button("Annuler", key=f"perso_annuler_del_{compte_id}", icon=":material/close:", width="stretch"):
             st.session_state.perso_action = None
+            afficher_chargement()
+
+
+@st.dialog("Supprimer l'entreprise", width="small", icon=":material/apartment:", on_dismiss=_annuler_action_equipe)
+def dialog_supprimer_entreprise(compte_id, compte_nom):
+    st.markdown(
+        f"<p style='text-align:center;color:#6b7280;font-size:1.05rem;font-weight:500;'>"
+        f"Cette action supprimera définitivement l'entreprise « {compte_nom} » et toutes ses données.</p>",
+        unsafe_allow_html=True
+    )
+    col_conf, col_annul = st.columns(2)
+    with col_conf:
+        if st.button("Confirmer la suppression", key=f"equipe_conf_del_{compte_id}", icon=":material/delete_forever:", type="secondary", width="stretch"):
+            with st.spinner("Suppression du compte..."):
+                _, erreur = supprimer_compte(compte_id)
+            if erreur:
+                show_notification(f"Erreur lors de la suppression : {erreur}", type_notif="error")
+            else:
+                st.session_state.equipe_action = None
+                st.session_state.equipe_selection_chemin = None
+                st.session_state.equipe_selection_nom = None
+                st.session_state.equipe_selection_membre = None
+                st.session_state.equipe_selection_libelle = None
+                st.session_state.tenant_db = None
+                st.session_state.flash_msg = f"Entreprise {compte_nom} supprimée."
+                st.session_state.flash_type = "success"
+                afficher_chargement()
+    with col_annul:
+        if st.button("Annuler", key=f"equipe_annuler_del_{compte_id}", icon=":material/close:", width="stretch"):
+            st.session_state.equipe_action = None
             afficher_chargement()
 
 

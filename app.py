@@ -317,11 +317,15 @@ st.markdown(
         display: none !important;
     }
     button[data-testid="stPopoverButton"] {
-        width: 2.75rem !important;
-        min-width: 2.75rem !important;
-        height: 2.75rem !important;
+        width: 3.5rem !important;
+        min-width: 3.5rem !important;
+        height: 3.5rem !important;
         padding: 0 !important;
         justify-content: center !important;
+    }
+    [data-testid="stPopoverBody"] div[data-testid="stButton"] button {
+        min-height: 3.5rem !important;
+        font-size: 1rem !important;
     }
     [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] [data-testid="stPopover"]) > [data-testid="stColumn"]:last-child {
         display: flex !important;
@@ -349,6 +353,14 @@ st.markdown(
         [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] [data-testid="stPopover"]) > [data-testid="stColumn"]:last-child {
             flex: 0 0 3.5rem !important;
             min-width: 3.5rem !important;
+        }
+        button[data-testid="stPopoverButton"] {
+            width: 3rem !important;
+            min-width: 3rem !important;
+            height: 3rem !important;
+        }
+        [data-testid="stPopoverBody"] div[data-testid="stButton"] button {
+            min-height: 3rem !important;
         }
     }
     /* Icônes au-dessus du texte (hors sidebar, form-submit et boutons "Retour/Changer de compte/Changer d'entreprise") */
