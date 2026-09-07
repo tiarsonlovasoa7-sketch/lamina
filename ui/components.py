@@ -79,7 +79,7 @@ def styler_champs_login():
 
 
 def afficher_ecran_intro():
-    """Affiche l'ecran de lancement avec l'ecriture du nom Lamina au clavier."""
+    """Affiche l'ecran de lancement : "Lamina" s'ecrit au clavier en 2 s, au theme de l'app."""
     st.markdown(
         """
         <style>
@@ -91,9 +91,12 @@ def afficher_ecran_intro():
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: #171B21;
-            animation: lamina-intro-out 0.6s ease-in-out 1.5s forwards;
+            background: #F7F6F2;
+            animation: lamina-intro-out 0.6s ease-in-out 1.4s forwards;
             pointer-events: none;
+        }
+        .lamina-intro.theme-sombre {
+            background: #171B21;
         }
         .lamina-intro .intro-nom {
             color: #C0392B;
@@ -104,12 +107,13 @@ def afficher_ecran_intro():
             overflow: hidden;
             white-space: nowrap;
             border-right: 3px solid #C0392B;
+            padding-right: 0.5ch;
             width: 0;
-            animation: lamina-typing 1.2s steps(12, end) 0.15s forwards, lamina-caret 0.7s step-end infinite;
+            animation: lamina-typing 1.2s steps(6, end) 0.1s forwards, lamina-caret 0.6s step-end 2 both;
         }
         @keyframes lamina-typing {
             from { width: 0; }
-            to { width: 6ch; }
+            to { width: 6.4ch; }
         }
         @keyframes lamina-caret {
             0%, 100% { border-color: transparent; }

@@ -114,6 +114,14 @@ st.iframe(
                 voile.classList.add(themeSombre() ? "theme-sombre" : "theme-clair");
             }
 
+            function appliquerThemeIntro() {
+                var intro = doc.querySelector(".lamina-intro");
+                if (!intro) return;
+                intro.classList.remove("theme-sombre");
+                intro.classList.remove("theme-clair");
+                intro.classList.add(themeSombre() ? "theme-sombre" : "theme-clair");
+            }
+
             function estTelechargement(el) {
                 var tid = el.getAttribute("data-testid") || "";
                 return tid.toLowerCase().indexOf("download") !== -1;
@@ -225,6 +233,7 @@ st.iframe(
                     var obs = new MutationObserver(function (mutations) {
                         appliquerClassesDelaye();
                         appliquerIcônesFiltres();
+                        appliquerThemeIntro();
                         if (!enAttente) return;
                         for (var i = 0; i < mutations.length; i++) {
                             if (voile && voile.contains(mutations[i].target)) continue;
@@ -236,6 +245,7 @@ st.iframe(
                 }
                 appliquerClassesBoutons();
                 appliquerIcônesFiltres();
+                appliquerThemeIntro();
             }
 
             doc.addEventListener("click", function (evt) {
@@ -552,42 +562,6 @@ st.markdown(
         border-color: #166534 !important;
         box-shadow: 0 4px 14px rgba(21, 128, 61, 0.42) !important;
         transform: translateY(-2px) !important;
-    }
-    .lamina-intro {
-        position: fixed;
-        inset: 0;
-        z-index: 1000000;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background: #171B21;
-        animation: lamina-intro-out 0.6s ease-in-out 1.5s forwards;
-        pointer-events: none;
-    }
-    .lamina-intro .intro-nom {
-        color: #C0392B;
-        font-size: 52px;
-        font-weight: 700;
-        letter-spacing: 2px;
-        font-family: "Menlo", "Consolas", monospace;
-        overflow: hidden;
-        white-space: nowrap;
-        border-right: 3px solid #C0392B;
-        width: 0;
-        animation: lamina-typing 1.2s steps(12, end) 0.15s forwards, lamina-caret 0.7s step-end infinite;
-    }
-    @keyframes lamina-typing {
-        from { width: 0; }
-        to { width: 6.2ch; }
-    }
-    @keyframes lamina-caret {
-        0%, 100% { border-color: transparent; }
-        50% { border-color: #C0392B; }
-    }
-    @keyframes lamina-intro-out {
-        0% { opacity: 1; }
-        100% { opacity: 0; visibility: hidden; }
     }
     .lamina-voile-js {
         position: fixed;
