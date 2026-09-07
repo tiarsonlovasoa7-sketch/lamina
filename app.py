@@ -164,8 +164,8 @@ st.iframe(
             var iconesEnLigne = ["arrow_back", "swap_horiz", "house"];
 
             var ICONES_FILTRES = {
-                "search": "\\e8b6",
-                "calendar_month": "\\ebcc",
+                "search": "\\ue8b6",
+                "calendar_month": "\\uebcc",
             };
 
             function appliquerIcônesFiltres() {
