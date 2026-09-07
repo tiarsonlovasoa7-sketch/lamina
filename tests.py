@@ -259,6 +259,20 @@ def test_generation_pdf_caracteres_speciaux():
     assert data.startswith(b"%PDF")
     print("OK test_generation_pdf_caracteres_speciaux")
 
+def test_reset_securite_et_isolation_modes():
+    from services.auth import _verifier_ancien_mdp, logout
+    import streamlit as st
+
+    st.session_state.tenant_db = "fake_path.db"
+    logout()
+    assert st.session_state.tenant_db is None
+    assert st.session_state.user is None
+
+    # Test verification ancien mdp sans fallback non securise
+    res = _verifier_ancien_mdp("non_existent_db.db", "unknown@test.com", "wrongpass")
+    assert res is False
+    print("OK test_reset_securite_et_isolation_modes")
+
 if __name__ == "__main__":
     test_bienvenue()
     test_creation_espace_personnel()
@@ -267,4 +281,5 @@ if __name__ == "__main__":
     test_gestion_equipe_et_role_assistant()
     test_annuaire_comptes()
     test_generation_pdf_caracteres_speciaux()
+    test_reset_securite_et_isolation_modes()
     print("Tous les tests sont passés.")

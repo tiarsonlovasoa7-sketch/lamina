@@ -186,8 +186,14 @@ COLONNES_OPTIONNELLES = {
 
 # Fonction d ajout des colonnes manquantes sur une base deja creee (migration legere)
 def migrer_schema(moteur):
-    with moteur.connect() as conn:
+    with moteur.begin() as conn:
         for table, colonnes in COLONNES_OPTIONNELLES.items():
+            table_existe = conn.exec_driver_sql(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name=:t",
+                {"t": table}
+            ).fetchone()
+            if not table_existe:
+                continue
             existantes = {row[1] for row in conn.exec_driver_sql(f"PRAGMA table_info({table})")}
             for nom, type_sql in colonnes:
                 if nom not in existantes:
