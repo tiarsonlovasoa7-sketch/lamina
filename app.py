@@ -150,6 +150,11 @@ st.iframe(
                 var barre = doc.querySelector('[data-testid="stSidebar"]');
                 if (!barre) return;
                 if (barre.getAttribute("aria-expanded") !== "true") return;
+                var collapse = doc.querySelector('[data-testid="stSidebarCollapseButton"] button, button[data-testid="stSidebarCollapseButton"]');
+                if (collapse) {
+                    collapse.click();
+                    return;
+                }
                 var cible = doc.querySelector('[data-testid="stMain"]') || doc.querySelector('[data-testid="stApp"]') || doc.body;
                 if (cible) {
                     cible.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
@@ -212,6 +217,17 @@ st.iframe(
                 if (estTelechargement(el)) {
                     setTimeout(masquer, 1500);
                 }
+            }, true);
+
+            doc.addEventListener("click", function (evt) {
+                if (!estMobile()) return;
+                var el = evt.target && evt.target.closest ?
+                    (evt.target.closest('[data-testid="stSidebar"]') ||
+                     evt.target.closest('[data-testid="stPopover"]') ||
+                     evt.target.closest('button[data-testid="stSidebarCollapseButton"], [data-testid="stSidebarCollapseButton"]')) :
+                    null;
+                if (el) return;
+                replierSidebar();
             }, true);
 
             doc.addEventListener("keydown", function (evt) {
