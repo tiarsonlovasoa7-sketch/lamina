@@ -4,7 +4,8 @@ from datetime import datetime, timedelta
 
 import streamlit as st
 
-from database import Utilisateur, hash_password, verify_password, verifier_code_reset, creer_session_sur
+from database import (Utilisateur, hash_password, verify_password, verifier_code_reset,
+                      creer_session_sur, trouver_compte)
 from services.db import get_db
 from services.emails import envoyer_email_auto, template_code_reset
 from utils import clean_str, validate_password_strength
@@ -15,9 +16,10 @@ def _verifier_ancien_mdp(chemin_db, email, ancien_mdp):
     tdb = None
     try:
         tdb = creer_session_sur(chemin_db)
-        util = tdb.query(Utilisateur).filter(Utilisateur.email == email).first()
-        if util is None:
+        if not email:
             util = tdb.query(Utilisateur).first()
+        else:
+            util = tdb.query(Utilisateur).filter(Utilisateur.email == email).first()
         if util and util.mot_de_passe_hash:
             ok, _ = verify_password(ancien_mdp, util.mot_de_passe_hash)
             return ok
@@ -98,26 +100,48 @@ def logout():
     st.session_state.tenant_db = None
     st.session_state.current_page = "Tableau de bord"
     st.session_state.just_logged_in = False
+    st.session_state.editing_rdv_id = None
+    st.session_state.perso_selection_nom = None
+    st.session_state.perso_selection_chemin = None
+    st.session_state.equipe_selection_chemin = None
+    st.session_state.equipe_selection_nom = None
+    st.session_state.equipe_selection_membre = None
+    st.session_state.equipe_selection_libelle = None
+    st.session_state.perso_action = None
+    st.session_state.action_membre = None
 
 
-def envoyer_code_reset(clean_mail):
-    """Envoie un code de reinitialisation a un compte de la base active."""
+def envoyer_code_reset(clean_mail, mode=None, entreprise=None):
+    """Envoie un code de reinitialisation au compte proprietaire de l'e-mail.
+
+    Les utilisateurs resident dans la base de donnees de leur compte, pas dans
+    l'annuaire : on reperce d'abord le bon compte (par e-mail en mode personnel,
+    par nom d'entreprise en mode equipe pour couvrir aussi les assistants),
+    puis on ouvre sa base pour y chercher l'utilisateur.
+    """
+    compte_choisi = None
+    if entreprise:
+        compte_choisi = trouver_compte(mode="equipe", nom=clean_str(entreprise))
+    elif mode:
+        compte_choisi = trouver_compte(mode=mode, email=clean_mail)
+
     with st.spinner("Génération du code cryptographique sécurisé..."):
-        db = get_db()
+        if not compte_choisi:
+            return "Aucun compte associé à cet e-mail.", "error"
+        db = creer_session_sur(compte_choisi.chemin_db)
         try:
             user_to_reset = db.query(Utilisateur).filter(Utilisateur.email == clean_mail).first()
             if not user_to_reset:
                 return "Aucun compte associé à cet e-mail.", "error"
             code_genere = f"{secrets.randbelow(900000) + 100000}"
-            user_to_reset.code_reset = hash_password(code_genere)
-            user_to_reset.code_reset_expire = datetime.now() + timedelta(minutes=15)
-            db.commit()
-
-            st.session_state.reset_email = clean_mail
-            st.session_state.reset_tenant_db = st.session_state.get("tenant_db")
             sujet, corps = template_code_reset(code_genere)
             ok, err = envoyer_email_auto(clean_mail, sujet, corps)
             if ok:
+                user_to_reset.code_reset = hash_password(code_genere)
+                user_to_reset.code_reset_expire = datetime.now() + timedelta(minutes=15)
+                db.commit()
+                st.session_state.reset_email = clean_mail
+                st.session_state.reset_tenant_db = compte_choisi.chemin_db
                 return "Code de vérification envoyé par e-mail avec succès.", "success"
             return f"Erreur d'envoi de l'e-mail : {err}", "error"
         finally:
@@ -149,10 +173,12 @@ def confirmer_reset(code_saisi, new_pass, new_pass_conf):
             user_to_update = db.query(Utilisateur).filter(Utilisateur.email == clean_mail).first()
             if not user_to_update:
                 return "Compte introuvable.", "error"
+            if not user_to_update.code_reset:
+                return "Aucun code de réinitialisation actif. Veuillez demander un nouveau code.", "error"
+            if user_to_update.code_reset_expire and user_to_update.code_reset_expire < datetime.now():
+                return "Le code de vérification a expiré. Veuillez en demander un nouveau.", "error"
             if not verifier_code_reset(clean_code, user_to_update.code_reset):
                 return "Code de vérification incorrect.", "error"
-            if user_to_update.code_reset_expire and user_to_update.code_reset_expire < datetime.now():
-                return "Le code de vérification a expiré.", "error"
             user_to_update.mot_de_passe_hash = hash_password(clean_new_pass)
             user_to_update.code_reset = None
             user_to_update.code_reset_expire = None

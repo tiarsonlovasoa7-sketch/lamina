@@ -85,6 +85,12 @@ def interface_equipe():
     with col_milieu:
         if st.button("Retour au choix du mode", icon=":material/arrow_back:", width="stretch"):
             st.session_state.mode = None
+            st.session_state.tenant_db = None
+            st.session_state.equipe_selection_chemin = None
+            st.session_state.equipe_selection_nom = None
+            st.session_state.equipe_selection_membre = None
+            st.session_state.equipe_selection_libelle = None
+            st.session_state.action_membre = None
             afficher_chargement()
     st.space("small")
     styler_champs_login()
@@ -259,7 +265,7 @@ def interface_equipe():
                                 show_notification("Entreprise introuvable.", type_notif="error")
                             else:
                                 st.session_state.tenant_db = compte.chemin_db
-                                msg, typ = envoyer_code_reset(clean_mail)
+                                msg, typ = envoyer_code_reset(clean_mail, mode="equipe", entreprise=entreprise_clean)
                                 if typ == "success":
                                     st.session_state.flash_msg = msg
                                     st.session_state.flash_type = "success"

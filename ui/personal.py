@@ -67,18 +67,22 @@ def _section_liste_comptes_perso():
                                 else:
                                     tdb = creer_session_sur(compte_act.chemin_db)
                                     try:
-                                        util = tdb.query(Utilisateur).filter(Utilisateur.email == compte_act.email).first()
+                                        util = None
+                                        if compte_act.email:
+                                            util = tdb.query(Utilisateur).filter(Utilisateur.email == compte_act.email).first()
                                         if util is None:
                                             util = tdb.query(Utilisateur).first()
                                         if util:
                                             util.mot_de_passe_hash = hash_password(pass_clean)
                                             tdb.commit()
+                                            st.session_state.perso_action = None
+                                            st.session_state.flash_msg = f"Le mot de passe de {compte_act.nom} a été modifié."
+                                            st.session_state.flash_type = "success"
+                                            afficher_chargement()
+                                        else:
+                                            show_notification("Utilisateur introuvable dans la base de données.", type_notif="error")
                                     finally:
                                         tdb.close()
-                                    st.session_state.perso_action = None
-                                    st.session_state.flash_msg = f"Le mot de passe de {compte_act.nom} a été modifié."
-                                    st.session_state.flash_type = "success"
-                                    afficher_chargement()
                     st.button("Annuler", key=f"perso_annuler_mdp_{cid}", icon=":material/close:",
                               on_click=_annuler_action_perso)
             elif act == "del":
@@ -91,6 +95,10 @@ def interface_personnel():
     with col_milieu:
         if st.button("Retour au choix du mode", icon=":material/arrow_back:", width="stretch"):
             st.session_state.mode = None
+            st.session_state.tenant_db = None
+            st.session_state.perso_selection_nom = None
+            st.session_state.perso_selection_chemin = None
+            st.session_state.perso_action = None
             afficher_chargement()
     st.space("small")
     styler_champs_login()
@@ -220,7 +228,7 @@ def interface_personnel():
                                 show_notification("Aucun espace personnel associé à cet e-mail.", type_notif="error")
                             else:
                                 st.session_state.tenant_db = compte.chemin_db
-                                msg, typ = envoyer_code_reset(clean_mail)
+                                msg, typ = envoyer_code_reset(clean_mail, mode="personnel")
                                 if typ == "success":
                                     st.session_state.flash_msg = msg
                                     st.session_state.flash_type = "success"
