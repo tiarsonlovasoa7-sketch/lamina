@@ -13,7 +13,7 @@ from utils import clean_str, format_id, sanitize_text, validate_password_strengt
 
 
 def page_dashboard(user, db):
-    """Tableau de bord avec les indicateurs cles de l'activite."""
+    """Tableau de bord avec les indicateurs cles, graphiques et resume des RDV par date."""
     page_header("Pilotage et indicateurs clés", "Vue d'ensemble de l'activité des audiences")
 
     tous_rdvs = db.query(RendezVous).all()
@@ -31,6 +31,57 @@ def page_dashboard(user, db):
         stat_card("En attente d'arbitrage", len(en_attente))
     with col4:
         stat_card("Demandes refusées", len(refuses))
+
+    # Graphiques de synthese
+    if tous_rdvs:
+        df_rdv = pd.DataFrame([{
+            "statut": r.statut,
+            "priorite": r.priorite,
+            "date_rdv": r.date_heure.date(),
+            "heure": r.date_heure.strftime("%H:%M"),
+            "titre": r.titre,
+            "intervenant": r.intervenant,
+            "id": r.id,
+        } for r in tous_rdvs])
+
+        section_title("Graphiques de synthèse")
+
+        rep_statut = df_rdv["statut"].value_counts()
+        rep_priorite = df_rdv["priorite"].value_counts()
+        rep_date = df_rdv["date_rdv"].value_counts().sort_index()
+
+        c_graph1, c_graph2 = st.columns(2)
+        with c_graph1:
+            st.markdown("#### Demandes par statut")
+            st.bar_chart(rep_statut, x_label="Statut", y_label="Nombre de demandes", height=280, color="#C0392B")
+        with c_graph2:
+            st.markdown("#### Rendez-vous par date")
+            st.bar_chart(rep_date, x_label="Date", y_label="Nombre de RDV", height=280, color="#2563EB")
+
+        st.markdown("#### Demandes par priorité")
+        st.bar_chart(rep_priorite, x_label="Priorité", y_label="Nombre de demandes", height=240, color="#B45309")
+
+        # Resume des rendez-vous groupe par date
+        section_title("Résumé des rendez-vous par date")
+        for date_v in sorted(rep_date.index):
+            rdvs_jour = [r for r in tous_rdvs if r.date_heure.date() == date_v]
+            rdvs_jour.sort(key=lambda x: x.date_heure)
+            nb_conf = sum(1 for r in rdvs_jour if r.statut == "Confirme")
+            nb_att = sum(1 for r in rdvs_jour if r.statut == "En attente")
+            nb_ref = sum(1 for r in rdvs_jour if r.statut == "Refuse")
+            label = (f"{date_v.strftime('%A %d/%m/%Y')} — {len(rdvs_jour)} RDV(s) "
+                     f"({nb_conf} confirmé(s), {nb_att} en attente, {nb_ref} refusé(s))")
+            with st.expander(label, expanded=False):
+                for r in rdvs_jour:
+                    st.markdown(
+                        f"{badge_statut(r.statut)} **{r.date_heure.strftime('%H:%M')}** — "
+                        f"{format_id(r.id)} — {sanitize_text(r.titre)} "
+                        f"({sanitize_text(r.intervenant)}) {badge_priorite(r.priorite)}"
+                    )
+    else:
+        st.info("Aucun rendez-vous enregistré pour le moment.")
+
+    st.space("medium")
 
     recent_reponses_confirmes = db.query(RendezVous).filter(RendezVous.statut == "Confirme").order_by(RendezVous.id.desc()).limit(3).all()
     recent_reponses_refuses = db.query(RendezVous).filter(RendezVous.statut == "Refuse").order_by(RendezVous.id.desc()).limit(3).all()
@@ -178,8 +229,9 @@ def page_validation(user, db):
                         e_heure = c4.time_input("Heure", value=rdv.date_heure.time())
 
                         c5, c6 = st.columns(2)
-                        e_duree = c5.number_input("Durée (min)", value=rdv.duree_minutes, min_value=15, step=15)
-                        e_priorite = c6.selectbox("Priorité", ["Basse", "Moyenne", "Haute"], index=["Basse", "Moyenne", "Haute"].index(rdv.priorite))
+                        priorite_opts = ["Basse", "Moyenne", "Haute"]
+                        idx_pri = priorite_opts.index(rdv.priorite) if rdv.priorite in priorite_opts else 1
+                        e_priorite = c6.selectbox("Priorité", priorite_opts, index=idx_pri)
 
                         e_contexte = st.text_area("Contexte et Notes", value=rdv.contexte_notes or "")
 
@@ -334,8 +386,9 @@ def page_historique(user, db):
                     e_heure = c4.time_input("Heure", value=rdv_edit.date_heure.time())
 
                     c5, c6 = st.columns(2)
-                    e_duree = c5.number_input("Durée (min)", value=rdv_edit.duree_minutes, min_value=15, step=15)
-                    e_priorite = c6.selectbox("Priorité", ["Basse", "Moyenne", "Haute"], index=["Basse", "Moyenne", "Haute"].index(rdv_edit.priorite))
+                    priorite_opts = ["Basse", "Moyenne", "Haute"]
+                    idx_pri = priorite_opts.index(rdv_edit.priorite) if rdv_edit.priorite in priorite_opts else 1
+                    e_priorite = c6.selectbox("Priorité", priorite_opts, index=idx_pri)
 
                     e_contexte = st.text_area("Contexte et Notes", value=rdv_edit.contexte_notes or "")
 
